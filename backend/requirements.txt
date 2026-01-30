@@ -8,3 +8,15 @@ pymysql>=1.1.0
 redis>=5.0.0
 
 python-dotenv==1.0.1
+pydantic-settings>=2.0.0
+
+# Embedding & Vector Search
+sentence-transformers>=2.7.0
+huggingface-hub>=0.21.0
+faiss-cpu>=1.7.4
+
+# LLM Integration
+groq>=0.4.0
+
+# Data Processing
+numpy>=1.24.0
