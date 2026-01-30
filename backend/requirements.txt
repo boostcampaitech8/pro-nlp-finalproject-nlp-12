@@ -8,3 +8,11 @@ pymysql>=1.1.0
 redis>=5.0.0
 
 python-dotenv==1.0.1
+
+numpy>=1.26.0
+faiss-cpu>=1.8.0
+
+pydantic==2.12.5 # 데이터 검증 및 설정 모델
+pydantic-settings>=2.0.0 # .env 기반 환경변수 로딩 (BaseSettings용)
+
+sentence-transformers>=2.6.0  # 텍스트 임베딩 모델
