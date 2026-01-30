@@ -2,6 +2,8 @@ from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableParallel, RunnableLambda
 
+from operator import itemgetter
+
 import re
 import nltk
 from nltk.corpus import stopwords
@@ -96,10 +98,20 @@ class SearchService:
         sparse_retriever = self.SparseRetriever()
         dense_retriever = self.DenseRetriever()
 
+        # [검증 함수] BM25로 들어가는 데이터 확인
+        def check_sparse_input(query):
+            print(f"\n✅ [검증] BM25(Sparse) 실행 -> 입력값: '{query}' (번역)")
+            return query
+
+        # [검증 함수] Dense로 들어가는 데이터 확인
+        def check_dense_input(query):
+            print(f"✅ [검증] Granite(Dense) 실행 -> 입력값: '{query}' (원본)")
+            return query
+
         # 1. 두 검색기를 병렬로 실행하여 각각 결과를 가져오게 설정
         retrievers_chain = RunnableParallel({
-            "sparse": sparse_retriever,
-            "dense": dense_retriever
+            "sparse": itemgetter("translated_query") | RunnableLambda(check_sparse_input) | sparse_retriever,
+            "dense": itemgetter("original_query") | RunnableLambda(check_dense_input) | dense_retriever
         })
 
         # 2. 두 결과를 합치고 순위를 재조정하는 RRF 함수 정의
@@ -156,15 +168,28 @@ class SearchService:
 
         return hybrid_chain
     
+    def check_language(self, query_input: str) -> str:
+        """
+        query에 한국어가 포함되어있는지 여부 확인
+        """
+        ko_re = re.compile('[\uac00-\ud7a3]+')
+        if ko_re.search(query_input):
+            return 'ko'
+        return 'en'
+
     async def search(self, query: str):
         """
         하이브리드 검색 수행
         """
-        # 쿼리 번역 (영어)
-        translated_query = self.translator.translate(query)
+        lang = self.check_language(query)
 
-        print(f"Original Query: {query}")              # 로그 확인용
-        print(f"Translated Query: {translated_query}") # 로그 확인용
+        if lang == 'ko':
+            translated_query = self.translator.translate(query)
+        else:
+            translated_query = query
 
         # 번역된 쿼리로 실행
-        return await self.hybrid_retriever.ainvoke(translated_query)
+        return await self.hybrid_retriever.ainvoke({
+            "original_query": query,             # -> Dense
+            "translated_query": translated_query # -> BM25
+        })
