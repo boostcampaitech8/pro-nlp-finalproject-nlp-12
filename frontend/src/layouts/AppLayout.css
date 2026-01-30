@@ -1,0 +1,5 @@
+.app-layout__main {
+  /* bottonNav 높이만큼 여백 확보 */
+  padding-bottom: 56px;
+  min-height: 100vh;
+}

@@ -1,0 +1,94 @@
+.search-page {
+  padding: 16px;
+}
+
+.search-empty {
+  height: calc(100vh - 56px); /* 하단 네비 제외 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+}
+
+.search-empty__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.search-bar {
+  display: flex;
+  gap: 8px;
+}
+
+.search-bar__input {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.18);
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+.search-bar__btn {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.18);
+  background: #fff;
+  cursor: pointer;
+}
+
+.search-bar--top {
+  position: sticky;
+  top: 0;
+  padding-top: 6px;
+  padding-bottom: 10px;
+  background: #fff;
+  z-index: 10;
+}
+
+.search-meta {
+  margin: 10px 0 12px;
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.search-error {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.shorts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.short-card {
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.short-card__title {
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.short-card__meta {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.short-card__abs {
+  font-size: 13px;
+  line-height: 1.45;
+  opacity: 0.9;
+}
+
+.short-card__footer {
+  margin-top: 10px;
+  font-size: 13px;
+}

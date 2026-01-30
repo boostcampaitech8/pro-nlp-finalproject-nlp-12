@@ -1,0 +1,170 @@
+.lib-wrap {
+  padding: 18px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.lib-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.lib-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.lib-sub {
+  font-size: 13px;
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+.lib-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.lib-field {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.lib-field input {
+  width: 150px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  outline: none;
+}
+
+.lib-tabs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.lib-tab {
+  border: 1px solid rgba(0,0,0,0.12);
+  background: white;
+  padding: 8px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.lib-tab.active {
+  border-color: rgba(0,0,0,0.28);
+  font-weight: 700;
+}
+
+.lib-count {
+  margin-left: auto;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.lib-error {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 0, 0, 0.06);
+  margin-bottom: 10px;
+}
+
+.lib-empty {
+  padding: 20px 12px;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.lib-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .lib-grid { grid-template-columns: 1fr; }
+}
+
+.lib-card {
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 16px;
+  padding: 14px;
+  background: white;
+}
+
+.lib-badge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.lib-badge {
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.12);
+}
+
+.lib-badge.like {
+  font-weight: 800;
+}
+
+.lib-badge.bookmark {
+  font-weight: 800;
+}
+
+.lib-date {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.lib-card-title {
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.lib-authors, .lib-pub {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-bottom: 4px;
+}
+
+.lib-abs {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0.9;
+}
+
+.lib-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.lib-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  text-decoration: none;
+  color: inherit;
+  font-size: 13px;
+}
+

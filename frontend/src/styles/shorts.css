@@ -1,0 +1,370 @@
+:root {
+  --shorts-header-h: 68px;
+}
+
+/* shorts 영역에서만 최소 reset */
+.shorts-root * {
+  box-sizing: border-box;
+}
+
+/* Root */
+.shorts-root {
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  background: #0f0f12;
+  color: #fff;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+    "Noto Sans KR", Arial, "Apple SD Gothic Neo", sans-serif;
+}
+
+/* Header */
+.shorts-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--shorts-header-h);
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: rgba(15, 15, 18, 0.65);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 20;
+}
+
+.shorts-logo {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  opacity: 0.95;
+}
+
+.shorts-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shorts-header input {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  outline: none;
+}
+
+.shorts-header input:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.shorts-mini-btn {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+}
+
+.shorts-mini-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.shorts-counter {
+  min-width: 60px;
+  text-align: right;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+/* Error */
+.shorts-error {
+  position: absolute;
+  top: calc(var(--shorts-header-h) + 10px);
+  left: 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 80, 80, 0.18);
+  border: 1px solid rgba(255, 80, 80, 0.28);
+  color: #fff;
+  font-size: 12px;
+  z-index: 25;
+  max-width: min(560px, calc(100vw - 32px));
+}
+
+/* Viewport */
+.shorts-view {
+  position: absolute;
+  top: var(--shorts-header-h);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+/* Slide wrapper */
+.shorts-slide {
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+  transition: transform 240ms ease;
+}
+
+/* ✅ each page = view height */
+.shorts-page {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 16px;
+}
+
+/* Card */
+.shorts-card {
+  width: min(920px, calc(100vw - 32px));
+  height: min(640px, calc(100vh - 160px));
+  padding: 30px;
+  border-radius: 28px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(94, 89, 255, 0.98),
+    rgba(129, 69, 255, 0.92)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.45);
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  overflow: hidden; /* 카드 내부 스크롤바 방지 */
+}
+
+.shorts-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.9;
+}
+
+.shorts-year {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.shorts-title {
+  font-size: clamp(28px, 4.2vw, 44px);
+  font-weight: 900;
+  line-height: 1.08;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.shorts-abstract {
+  font-size: 16px;
+  line-height: 1.65;
+  opacity: 0.95;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 8;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.shorts-tags {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.shorts-tag {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 13px;
+  opacity: 0.96;
+}
+
+/* Actions */
+.shorts-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.shorts-btn {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.shorts-btn.ghost {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.shorts-btn.primary {
+  flex: 1;
+  min-width: 180px;
+  background: #fff;
+  color: rgba(92, 76, 230, 1);
+  border: 1px solid rgba(255, 255, 255, 0);
+  font-weight: 900;
+}
+
+.shorts-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Right nav */
+.shorts-nav {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 18;
+}
+
+.shorts-nav-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+}
+
+.shorts-nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Empty */
+.shorts-empty {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  opacity: 0.8;
+}
+
+/* Bottom status */
+.shorts-status {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 12px;
+  opacity: 0.9;
+  z-index: 15;
+}
+
+.shorts-btn.on {
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.32);
+}
+
+/* 검색바 추가 */
+.shorts-search {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: min(720px, 62vw);
+}
+
+.shorts-search-input {
+  flex: 1;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  outline: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.shorts-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.shorts-search-btn {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.shorts-search-btn.ghost {
+  background: transparent;
+}
+
+/* ⏱ progress bar (feed ↔ bottom nav 경계) */
+.shorts-progress {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 56px;          /* 네비 높이에 맞춰 조절 */
+  height: 5px;          /* ✅ 두껍게 */
+  background: rgba(255, 255, 255, 0.14);
+  z-index: 9999;
+}
+
+/* ✅ 실제로 채워지는 바 */
+.shorts-progress__fill {
+  height: 100%;
+  width: 0%;
+  background: red;  /* ✅ 확실히 보이게 */
+  box-shadow: 0 0 10px rgba(255,255,255,0.35); /* ✅ 빛나는 느낌 */
+  transition: none;
+  min-width: 2px;        /* ✅ 0.x%일 때도 보이게 */
+}
+
+
+/* ⏸ pause button */
+.shorts-pause-btn {
+  position: absolute;
+  right: 14px;
+  bottom: 68px; /* 진행바보다 살짝 위 */
+  z-index: 31;
+
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+}
