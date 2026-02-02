@@ -14,7 +14,7 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav
+    <nav id="bottom-nav"
       style={{
         position: "sticky",
         bottom: 0,
@@ -36,6 +36,7 @@ export default function BottomNav() {
               fontWeight: active ? 700 : 500,
               opacity: active ? 1 : 0.6,
               textTransform: "capitalize",
+              color: 'black'
             }}
           >
             {it.label}
