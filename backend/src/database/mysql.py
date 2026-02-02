@@ -25,9 +25,6 @@ engine = create_engine(
 # 세션 설정
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# 모델 생성을 위한 기본 클래스
-Base = declarative_base()
-
 @contextmanager
 def get_mysql_db():
     """
