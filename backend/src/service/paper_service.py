@@ -4,30 +4,22 @@ from src.service.paper.search_service import SearchService
 from src.service.paper.parse_service import ParseService
 from src.service.paper.summarize_service import SummarizeService
 from src.client.gpt_client import GPTClient
-from src.service.vector_service import VectorService
-
-gpt_client = GPTClient()
-
-all_papers = PaperRepository.get_papers_as_documents()
-
-vector_service = VectorService()
-vectorstore = vector_service.initialize_index(all_papers)
-
-search_service = SearchService(vectorstore, all_papers)
-parse_service = ParseService()
-summarize_service = SummarizeService(gpt_client)
 
 class PaperService:
-    @staticmethod
-    async def summarize_and_save(arxiv_id: str):
+    def __init__(self, vectorstore, all_papers):
+        self.gpt_client = GPTClient()
+        self.search_service = SearchService(vectorstore, all_papers)
+        self.parse_service = ParseService()
+        self.summarize_service = SummarizeService(self.gpt_client)
+
+    async def summarize_and_save(self, arxiv_id: str):
         """
         논문을 번역 및 요약한 후 DB에 저장합니다.
         """
         # pdf 파싱 및 요약, 번역
-        parse_service = ParseService()
         pdf_url = f"https://arxiv.org/pdf/{arxiv_id}.pdf"
-        pdf_text = await parse_service.get_text_by_url(pdf_url)
-        response = await summarize_service.summarize(pdf_text)
+        pdf_text = await self.parse_service.get_text_by_url(pdf_url)
+        response = await self.summarize_service.summarize(pdf_text)
 
         # 논문 요약 내용 저장
         summary_infos = []
@@ -40,13 +32,12 @@ class PaperService:
         paper_id = PaperRepository.get_id_by_arxiv_id(arxiv_id)
 
         SummaryRepository.save(paper_id, summary_infos)
-        
-    @staticmethod
-    async def hybrid_search(query: str = "Attention mechanism의 효율성과 연산량 최적화 방법"):
+
+    async def hybrid_search(self, query: str = "Attention mechanism의 효율성과 연산량 최적화 방법"):
         """
         하이브리드 검색을 수행합니다.
         """
-        results = await search_service.search(query)
+        results = await self.search_service.search(query)
         return [
             {
                 "arxiv_id": doc.metadata.get("arxiv_id"),
