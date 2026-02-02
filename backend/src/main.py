@@ -42,7 +42,7 @@ app.add_middleware(
 API_PREFIX = "/api"
 
 app.include_router(user_router)
-app.include_router(paper_router)
+app.include_router(paper_router, prefix=API_PREFIX)
 
 app.include_router(admin_router, prefix=API_PREFIX)
 app.include_router(feed_router, prefix=API_PREFIX)

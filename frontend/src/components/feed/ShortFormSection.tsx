@@ -216,10 +216,22 @@ export default function ShortFormSection({
 
   const onDetail = useCallback(() => {
     if (!cur) return;
+  
+    console.log("onDetail cur =", cur);
+    console.log("onDetail cur.paper_id =", cur.paper_id);
+  
+    const paperId = cur.paper_id; // 네 주장대로 paper_id가 맞다면 이게 있어야 함
+  
+    if (paperId === undefined || paperId === null) {
+      console.error("paper_id is missing. cur =", cur);
+      return;
+    }
+  
     try {
-      sessionStorage.setItem(`paper:${cur.paper_id}`, JSON.stringify(cur));
+      sessionStorage.setItem(`paper:${paperId}`, JSON.stringify(cur));
     } catch {}
-    router.push(`/paper/${cur.paper_id}`);
+  
+    router.push(`/paper/${paperId}`);
   }, [cur, router]);
 
   if (!cur) return <div style={{ padding: 16 }}>표시할 논문이 없습니다.</div>;
