@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     """애플리케이션 설정"""
     
     # ===== Database =====
-    DB_URL: str = "mysql+pymysql://admin:password@localhost:3306/paper_db"
+    DB_URL: str = ""  # .env에서 설정 필요
     
     # ===== FAISS Index =====
     FAISS_INDEX_PATH: str = os.path.join(
