@@ -119,3 +119,58 @@ class UserEventRepository(BaseRepository[UserEvent]):
         )
         count = self.db.execute(stmt).scalar()
         return count > 0
+
+    ### 수정사항: like/bookmark 토글용 delete_event 추가
+    def delete_event(
+        self,
+        user_id: int,
+        paper_id: int,
+        event_type: str
+    ) -> bool:
+        """특정 이벤트 삭제 (토글용)"""
+        stmt = select(UserEvent).where(
+            and_(
+                UserEvent.user_id == user_id,
+                UserEvent.paper_id == paper_id,
+                UserEvent.event_type == event_type
+            )
+        )
+        event = self.db.execute(stmt).scalar_one_or_none()
+        if event:
+            self.db.delete(event)
+            self.db.commit()
+            return True
+        return False
+
+    ### 수정사항: click은 count 증가 방식 upsert_click 추가
+    def upsert_click(self, user_id: int, paper_id: int) -> UserEvent:
+        """click 이벤트 upsert: 있으면 count+1, 없으면 새로 생성"""
+        from datetime import datetime
+        stmt = select(UserEvent).where(
+            and_(
+                UserEvent.user_id == user_id,
+                UserEvent.paper_id == paper_id,
+                UserEvent.event_type == "click"
+            )
+        )
+        event = self.db.execute(stmt).scalar_one_or_none()
+
+        if event:
+            # 있으면 count +1, 시간 갱신
+            event.click_count = (event.click_count or 1) + 1
+            event.created_at = datetime.utcnow()
+            self.db.commit()
+            self.db.refresh(event)
+            return event
+        else:
+            # 없으면 새로 생성
+            new_event = UserEvent(
+                user_id=user_id,
+                paper_id=paper_id,
+                event_type="click",
+                click_count=1
+            )
+            self.db.add(new_event)
+            self.db.commit()
+            self.db.refresh(new_event)
+            return new_event

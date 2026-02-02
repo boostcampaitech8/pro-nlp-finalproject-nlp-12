@@ -1,12 +1,14 @@
 """Admin API - 시스템 관리 엔드포인트"""
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, and_
 
 from src.database.mysql import get_db
 from src.entity.paper import Paper
+from src.entity.user_event import UserEvent
 from src.service.faiss_service import faiss_service
 from src.service.embedder_service import embed_texts
+from src.api.events import get_user_id_from_uuid
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -100,3 +102,55 @@ def clear_faiss():
         "message": "FAISS index cleared",
         "total_in_index": faiss_service.get_total_count(),
     }
+
+
+# ============ Event 관리 ============
+
+@router.delete("/events/click")
+def reset_click(
+    user_id: str = Query(..., description="유저 UUID"),
+    paper_id: int = Query(..., description="논문 ID"),
+    db: Session = Depends(get_db),
+):
+    """특정 유저의 논문 클릭 기록 삭제 (click_count 초기화)"""
+    db_user_id = get_user_id_from_uuid(db, user_id)
+
+    stmt = select(UserEvent).where(
+        and_(
+            UserEvent.user_id == db_user_id,
+            UserEvent.paper_id == paper_id,
+            UserEvent.event_type == "click"
+        )
+    )
+    event = db.execute(stmt).scalar_one_or_none()
+
+    if not event:
+        raise HTTPException(status_code=404, detail="Click event not found")
+
+    db.delete(event)
+    db.commit()
+
+    return {"message": "Click event deleted", "user_id": user_id, "paper_id": paper_id}
+
+
+@router.delete("/events/user/{user_id}")
+def delete_user_events(
+    user_id: str,
+    event_type: str = Query(None, description="특정 이벤트 타입만 삭제 (없으면 전체)"),
+    db: Session = Depends(get_db),
+):
+    """특정 유저의 모든 이벤트 삭제"""
+    db_user_id = get_user_id_from_uuid(db, user_id)
+
+    stmt = select(UserEvent).where(UserEvent.user_id == db_user_id)
+    if event_type:
+        stmt = stmt.where(UserEvent.event_type == event_type)
+
+    events = db.execute(stmt).scalars().all()
+    count = len(events)
+
+    for event in events:
+        db.delete(event)
+    db.commit()
+
+    return {"message": f"Deleted {count} events", "user_id": user_id, "event_type": event_type}

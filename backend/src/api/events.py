@@ -79,19 +79,46 @@ async def log_event(
     """
     try:
         event_repo = UserEventRepository(db)
-        
+
         # user_uuid로부터 User ID 조회
         user_id = get_user_id_from_uuid(db, payload.user_id)
-        
-        # 새 UserEvent 엔티티는 weight 필드가 없음
+
+        ### 수정사항: click은 upsert (count 증가), like/bookmark는 토글
+        # click은 upsert (count 증가)
+        if payload.event_type == "click":
+            event = event_repo.upsert_click(user_id, payload.paper_id)
+            return UserEventResponse(
+                ok=True,
+                event_id=event.id,
+                user_id=payload.user_id,
+                paper_id=event.paper_id,
+                event_type=event.event_type,
+                toggled_off=False,
+                click_count=event.click_count,
+            )
+
+        # like/bookmark는 토글
+        if payload.event_type in ("like", "bookmark"):
+            if event_repo.exists_event(user_id, payload.paper_id, payload.event_type):
+                event_repo.delete_event(user_id, payload.paper_id, payload.event_type)
+                return UserEventResponse(
+                    ok=True,
+                    event_id=None,
+                    user_id=payload.user_id,
+                    paper_id=payload.paper_id,
+                    event_type=payload.event_type,
+                    toggled_off=True,
+                )
+
+        # like/bookmark 새로 생성
         event = UserEvent(
             user_id=user_id,
             paper_id=payload.paper_id,
             event_type=payload.event_type,
         )
-        
+
         event = event_repo.create(event)
-        
+
         # like/bookmark 시 백그라운드에서 preference 업데이트
         if payload.event_type in ("like", "bookmark"):
             background_tasks.add_task(
@@ -100,13 +127,14 @@ async def log_event(
                 payload.paper_id,
                 payload.event_type,
             )
-        
+
         return UserEventResponse(
             ok=True,
             event_id=event.id,
-            user_id=payload.user_id,  # UUID 문자열 그대로 반환 (DB는 int FK)
+            user_id=payload.user_id,
             paper_id=event.paper_id,
             event_type=event.event_type,
+            toggled_off=False,  # 토글 활성화됨
         )
     
     except Exception as e:

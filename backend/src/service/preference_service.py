@@ -61,28 +61,31 @@ class PreferenceService:
                 for p in papers[:5]  # 최대 5개만 사용
             ])
             
-            # Groq LLM으로 키워드 추출
+            ### 수정사항: Groq API 호출 방식 수정 (messages → chat.completions)
             client = Groq(api_key=settings.GROQ_API_KEY)
-            
-            message = client.messages.create(
+
+            response = client.chat.completions.create(
                 model=settings.GROQ_MODEL,
                 max_tokens=500,
                 messages=[
                     {
                         "role": "user",
-                        "content": f"""다음 논문들의 공통 주제와 키워드를 5-10개 추출해주세요.
-                        JSON 형식으로 "keywords": ["키워드1", "키워드2", ...] 형태로 응답해주세요.
-                        
+                        "content": f"""Extract 5-10 common research keywords from these papers.
+Return ONLY a JSON object: {{"keywords": ["keyword1", "keyword2", ...]}}
+All keywords MUST be in English. No other text.
+
 {papers_text}"""
                     }
                 ]
             )
-            
+
             # 응답 파싱
-            response_text = message.content[0].text
-            
-            # JSON 부분 추출
+            response_text = response.choices[0].message.content
+            print(f"Groq response: {response_text}")  # 디버그
+
+            ### 수정사항: JSON 파싱 로직 개선 (배열 형식도 지원)
             try:
+                # 1. {"keywords": [...]} 형식
                 json_start = response_text.find('{')
                 json_end = response_text.rfind('}') + 1
                 if json_start >= 0 and json_end > json_start:
@@ -91,7 +94,17 @@ class PreferenceService:
                     return data.get('keywords', [])
             except json.JSONDecodeError:
                 pass
-            
+
+            # 2. keywords: [...] 또는 그냥 [...] 형식
+            try:
+                array_start = response_text.find('[')
+                array_end = response_text.rfind(']') + 1
+                if array_start >= 0 and array_end > array_start:
+                    array_str = response_text[array_start:array_end]
+                    return json.loads(array_str)
+            except json.JSONDecodeError as e:
+                print(f"JSON parse error: {e}")
+
             return []
         
         except Exception as e:

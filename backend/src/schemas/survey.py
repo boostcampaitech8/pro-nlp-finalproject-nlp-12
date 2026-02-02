@@ -52,7 +52,7 @@ class SurveyCompleteRequest(BaseModel):
     """설문 완료 요청"""
     user_id: str = Field(..., min_length=1)
     categories: list[str] = Field(..., min_length=1)
-    paper_ids: list[int] = Field(..., min_length=3, description="최소 3개 논문 필수")
+    paper_ids: list[int] = Field(default=[], description="선택한 논문 ID (선택 사항)")  ### 수정사항: 논문 선택 필수 → 선택사항으로 변경
 
 
 class SurveyCompleteResponse(BaseModel):
