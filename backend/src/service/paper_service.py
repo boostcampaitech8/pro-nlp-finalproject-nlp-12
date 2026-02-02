@@ -1,4 +1,5 @@
 from src.repository.paper_repository import PaperRepository
+from src.repository.summary_repository import SummaryRepository
 from src.service.paper.search_service import SearchService
 from src.service.paper.parse_service import ParseService
 from src.service.paper.summarize_service import SummarizeService
@@ -18,14 +19,27 @@ summarize_service = SummarizeService(gpt_client)
 
 class PaperService:
     @staticmethod
-    async def summarize(arxiv_id: str):
+    async def summarize_and_save(arxiv_id: str):
         """
-        논문을 요약합니다.
+        논문을 번역 및 요약한 후 DB에 저장합니다.
         """
+        # pdf 파싱 및 요약, 번역
+        parse_service = ParseService()
         pdf_url = f"https://arxiv.org/pdf/{arxiv_id}.pdf"
         pdf_text = await parse_service.get_text_by_url(pdf_url)
         response = await summarize_service.summarize(pdf_text)
-        return response
+
+        # 논문 요약 내용 저장
+        summary_infos = []
+        for summary_type, summary_text in response.items():
+            summary_infos.append({
+                "summary_type": summary_type,
+                "summary_text": summary_text
+            })
+
+        paper_id = PaperRepository.get_id_by_arxiv_id(arxiv_id)
+
+        SummaryRepository.save(paper_id, summary_infos)
         
     @staticmethod
     async def hybrid_search(query: str = "Attention mechanism의 효율성과 연산량 최적화 방법"):
