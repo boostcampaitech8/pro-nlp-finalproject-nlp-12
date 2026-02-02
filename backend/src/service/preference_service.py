@@ -153,7 +153,7 @@ class PreferenceService:
             return None
         
         return {
-            "user_id": profile.user_id,
+            "user_id": profile.uuid,
             "categories": json.loads(profile.survey_categories or "[]"),
             "paper_ids": json.loads(profile.survey_paper_ids or "[]"),
             "keywords": json.loads(profile.extracted_keywords or "[]"),

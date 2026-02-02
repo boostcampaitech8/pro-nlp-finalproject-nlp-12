@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config.settings import settings
-from src.api import survey, feed, events
+from src.api import admin, events, feed, survey
 
 # ===== 로깅 설정 =====
 os.makedirs(settings.LOG_DIR, exist_ok=True)
@@ -64,6 +64,7 @@ app.add_middleware(
 app.include_router(survey.router)
 app.include_router(feed.router)
 app.include_router(events.router)
+app.include_router(admin.router)
 
 # ===== Health Check =====
 @app.get("/")

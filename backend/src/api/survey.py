@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, desc, and_
 
 from src.database.mysql import get_db
+from src.utils.rate_limiter import check_rate_limit
 from src.entity.paper import Paper
 from src.entity.user import User
 from src.schemas.survey import (
@@ -95,6 +96,9 @@ def complete_survey(
     Step 3: 설문 완료
     카테고리 + 논문 선택 저장 후 LLM으로 키워드 추출
     """
+    ### 수정사항: Rate limit 추가 (분당 2회)
+    check_rate_limit(payload.user_id, action="survey", max_requests=2, window_minutes=1)
+
     try:
         service = PreferenceService(db)
         

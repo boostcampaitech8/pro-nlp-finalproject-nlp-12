@@ -13,7 +13,9 @@ class Paper(Base):
     title = Column(String(500), nullable=False)
     pdf_url = Column(String(1000))
     abstract = Column(Text)
-
+    authors = Column(Text)
+    primary_category = Column(String(50))
+    categories = Column(Text)
     citation_count = Column(Integer)
     influential_citation_count = Column(Integer)
     reference_count = Column(Integer)

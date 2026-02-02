@@ -103,8 +103,8 @@ async def log_event(
         
         return UserEventResponse(
             ok=True,
-            event_id=event.id,  # event_id에서 id로 변경
-            user_id=event.user_id,
+            event_id=event.id,
+            user_id=payload.user_id,  # UUID 문자열 그대로 반환 (DB는 int FK)
             paper_id=event.paper_id,
             event_type=event.event_type,
         )

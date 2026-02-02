@@ -51,6 +51,8 @@ class Candidate:
     title: str
     abstract: str
     authors: Optional[str]
+    primary_category: Optional[str]
+    categories: Optional[str]
     published_at: Optional[str]
     abs_url: Optional[str]
     pdf_url: Optional[str]
@@ -231,49 +233,52 @@ class RecommendService:
     def _search_faiss(self, user_vector: np.ndarray, n: int = 100) -> list[Candidate]:
         """FAISS 벡터 검색"""
         try:
+            ### 수정사항: faiss_service.search()가 list[dict] 반환하도록 변경됨
             results = faiss_service.search(user_vector, k=n)
-            if not results or not isinstance(results, tuple):
+            if not results:
                 return []
-            
-            distances, indices = results
-            paper_ids = [int(idx) for idx in indices if idx >= 0]
-            
+
+            # results는 list[dict]: {"faiss_id", "score", "paper_id", ...}
+            paper_ids = [r["paper_id"] for r in results if r.get("paper_id")]
+
             if not paper_ids:
                 return []
-            
+
             # DB에서 메타데이터 조회
             papers_list = self.paper_repo.get_by_ids(paper_ids)
             papers = {p.id: p for p in papers_list}
-            
+
             candidates = []
-            for i, idx in enumerate(indices):
-                if idx < 0:
+            for r in results:
+                paper_id = r.get("paper_id")
+                if not paper_id:
                     continue
-                
-                idx = int(idx)
-                p = papers.get(idx)
+
+                p = papers.get(paper_id)
                 if not p:
                     continue
-                
-                # FAISS 거리 정규화: [0.3, 0.7] → [0.5, 1.0]
-                raw = 1.0 / (1.0 + distances[i]) if i < len(distances) else 0.5
+
+                # FAISS score 정규화: [0.3, 0.7] → [0.5, 1.0]
+                raw = r.get("score", 0.5)
                 normalized_score = min(1.0, max(0.5, 0.5 + (raw - 0.3) * 1.25))
-                
+
                 candidates.append(Candidate(
                     paper_id=int(p.id),
                     arxiv_id=p.arxiv_id,
                     title=p.title,
                     abstract=p.abstract or "",
                     authors=None,
+                    primary_category=p.primary_category,
+                    categories=p.categories,
                     published_at=p.published_date.isoformat() if p.published_date else None,
                     abs_url=f"https://arxiv.org/abs/{p.arxiv_id}",
                     pdf_url=p.pdf_url,
                     source="faiss",
                     raw_score=normalized_score,
                 ))
-            
+
             return candidates
-        
+
         except Exception as e:
             logger.error(f"FAISS search error: {e}")
             return []
@@ -305,6 +310,8 @@ class RecommendService:
                     title=p.title,
                     abstract=p.abstract or "",
                     authors=None,
+                    primary_category=p.primary_category,
+                    categories=p.categories,
                     published_at=p.published_date.isoformat() if p.published_date else None,
                     abs_url=f"https://arxiv.org/abs/{p.arxiv_id}",
                     pdf_url=p.pdf_url,
