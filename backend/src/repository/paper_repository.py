@@ -4,7 +4,7 @@ from langchain_core.documents import Document
 
 class PaperRepository:
     @staticmethod
-    def get_paper_by_arxiv_id(arxiv_id: str) -> int:
+    def get_id_by_arxiv_id(arxiv_id: str) -> int:
         """
         arxiv_id를 기반으로 DB에서 paper_id를 조회합니다.
         """
