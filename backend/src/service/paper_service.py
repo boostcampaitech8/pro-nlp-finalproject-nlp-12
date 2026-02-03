@@ -5,12 +5,13 @@ from src.service.summarization.parse_service import ParseService
 from src.service.summarization.summarize_service import SummarizeService
 from src.client.clova_client import ClovaClient
 from src.schemas.search import SearchResponse
+from langchain_core.documents import Document
 from typing import List
 
-class Paperervice:
-    def __init__(self, vectorstore, all_papers):
+class PaperService:
+    def __init__(self, faiss_service, all_docs: list[Document]):
         self.clova_client = ClovaClient()
-        self.search_service = SearchService(vectorstore, all_papers)
+        self.search_service = SearchService(faiss_service, all_docs)
         self.parse_service = ParseService()
         self.summarize_service = SummarizeService(self.clova_client)
 

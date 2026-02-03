@@ -11,12 +11,12 @@ from nltk.stem import PorterStemmer
 from deep_translator import GoogleTranslator
 
 class SearchService:
-    def __init__(self, vectorstore, docs: list[Document]):
+    def __init__(self, faiss_service, docs: list[Document]):
         """
         초기화 시 VectorService에서 생성된 vectorstore와
         DB에서 가져온 docs를 주입 받습니다.
         """
-        self.vectorstore = vectorstore
+        self.faiss_service = faiss_service
         self.docs = docs
 
         try:
@@ -88,8 +88,22 @@ class SearchService:
         """
         의미 기반 검색기 반환
         """
-        dense_retriever = self.vectorstore.as_retriever(search_kwargs={"k": 60})
-        return dense_retriever
+        def search_faiss(query: str):
+            results = self.faiss_service.search_by_text(query, k=60)
+            return [
+                Document(
+                    page_content=f"Title: {res.get("title")}\nAbstract: {res.get("abstract")}",
+                    metadata={
+                        "arxiv_id": res.get("arxiv_id"),
+                        "title": res.get("title"),
+                        "pdf_url": res.get("pdf_url"),
+                        "abstract": res.get("abstract"),
+                        "score": res.get("score")
+                    }
+                ) for res in results
+            ]
+        
+        return RunnableLambda(search_faiss)
 
     def HybridRetriever(self):
         """

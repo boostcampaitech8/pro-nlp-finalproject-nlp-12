@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import src.entity
 from src.api import search
 from src.entity.base import init_db
 from src.service.paper_service import PaperService
-from src.service.vector_service import VectorService
+from src.service.faiss_service import faiss_service
 from src.repository.paper_repository import PaperRepository
 import uvicorn
 
@@ -15,12 +16,10 @@ async def lifespan(app: FastAPI):
 
     # 무거운 작업 처리
     all_papers = PaperRepository.get_papers_as_documents()
-
-    vector_service = VectorService()
-    vectorstore = vector_service.initialize_index(all_papers)
+    faiss_service.update_papers(all_papers)
 
     # app.state에 서비스 인스턴스 저장(어디서든 꺼내 쓸 수 있음)
-    app.state.paper_service = PaperService(vectorstore, all_papers)
+    app.state.paper_service = PaperService(faiss_service, all_papers)
 
     yield
 
