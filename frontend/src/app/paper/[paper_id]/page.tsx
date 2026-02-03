@@ -25,7 +25,6 @@ async function getPaper(paperId: string): Promise<PaperDetail> {
 export default async function PaperDetailPage(props: {
   params: Promise<{ paper_id: string }>;
 }) {
-  // ✅ Next 16 Turbopack: params가 Promise일 수 있음
   const { paper_id } = await props.params;
 
   const data = await getPaper(paper_id);
