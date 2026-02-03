@@ -2,6 +2,11 @@ from src.entity.base import Base
 from sqlalchemy import Column, Integer, DateTime, func, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
+from typing import TYPE_CHECKING
+
+# 실행 시점이 아닌 타입 체크 시점에만 참조(순환 참조 방지)
+if TYPE_CHECKING:
+    from src.entity.paper import Paper
 
 class Feed(Base):
     """

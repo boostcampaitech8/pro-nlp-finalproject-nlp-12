@@ -2,7 +2,16 @@ from sqlalchemy import Integer, String, Text, Date, DateTime, func
 from src.entity.base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime, date
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
+
+# 실행 시점이 아닌 타입 체크 시점에만 참조(순환 참조 방지)
+if TYPE_CHECKING:
+    from src.entity.user_event import UserEvent
+    from src.entity.citation_edge import CitationEdge
+    from src.entity.feed import Feed
+    from src.entity.summary import Summary
+    from src.entity.primary_category import PrimaryCategory
+    from src.entity.paper_category import PaperCategory
 
 class Paper(Base):
     """
@@ -32,8 +41,6 @@ class Paper(Base):
         Text,
         nullable=False
     )
-    primary_category: Mapped[Optional[str]] = mapped_column(String(50))
-    categories: Mapped[Optional[str]] = mapped_column(Text)
     citation_count: Mapped[Optional[int]] = mapped_column(Integer)
     influential_citation_count: Mapped[Optional[int]] = mapped_column(Integer)
     reference_count: Mapped[Optional[int]] = mapped_column(Integer)
@@ -80,18 +87,13 @@ class Paper(Base):
         back_populates="cited_paper",
         cascade="all, delete-orphan"
     )
-    paper_categories: Mapped[list["PaperCategory"]] = relationship(
+    paper_categories: Mapped[List["PaperCategory"]] = relationship(
         "PaperCategory", 
         back_populates="paper",
         cascade="all, delete-orphan"
     )
     primary_category: Mapped["PrimaryCategory"] = relationship(
         "PrimaryCategory", 
-        back_populates="paper",
-        cascade="all, delete-orphan"
-    )
-    user_paper_categories: Mapped[list["UserPaperCategory"]] = relationship(
-        "UserPaperCategory", 
         back_populates="paper",
         cascade="all, delete-orphan"
     )

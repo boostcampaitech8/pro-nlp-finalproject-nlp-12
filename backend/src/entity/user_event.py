@@ -3,10 +3,17 @@ from sqlalchemy import Integer, ForeignKey, DateTime, func, Enum
 from datetime import datetime
 from src.entity.base import Base
 import enum
+from typing import TYPE_CHECKING
+
+# 실행 시점이 아닌 타입 체크 시점에만 참조(순환 참조 방지)
+if TYPE_CHECKING:
+    from src.entity.paper import Paper
+    from src.entity.user import User
 
 class EventType(enum.Enum):
     like = "like"          # 좋아요
     bookmark = "bookmark"  # 북마크
+    click_count = "click_count"  # 클릭 횟수
 
 class UserEvent(Base):
     """

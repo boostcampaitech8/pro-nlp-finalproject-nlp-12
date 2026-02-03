@@ -2,7 +2,12 @@ from src.entity.base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Integer, String, DateTime, Text, JSON, func, Boolean
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
+
+# 실행 시점이 아닌 타입 체크 시점에만 참조(순환 참조 방지)
+if TYPE_CHECKING:
+    from src.entity.user_event import UserEvent
+    from src.entity.user_paper_category import UserPaperCategory
 
 class User(Base):
     """
@@ -40,6 +45,11 @@ class User(Base):
 
     user_events : Mapped[List["UserEvent"]] = relationship(
         "UserEvent",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    user_paper_categories: Mapped[List["UserPaperCategory"]] = relationship(
+        "UserPaperCategory",
         back_populates="user",
         cascade="all, delete-orphan"
     )
