@@ -1,8 +1,8 @@
 from src.repository.paper_repository import PaperRepository
 from src.repository.summary_repository import SummaryRepository
-from src.service.paper.search_service import SearchService
-from src.service.paper.parse_service import ParseService
-from src.service.paper.summarize_service import SummarizeService
+from src.service.query_based_recommend.search_service import SearchService
+from src.service.query_based_recommend.parse_service import ParseService
+from src.service.query_based_recommend.summarize_service import SummarizeService
 from src.client.clova_client import ClovaClient
 
 class PaperService:
