@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     )
     
     # ===== App Settings =====
-    APP_NAME: str = "논문 숏폼 추천 시스템"
+    APP_NAME: str = "10 seconds"
     APP_VERSION: str = "3.0.0"
     DEBUG: bool = False
     

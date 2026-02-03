@@ -1,6 +1,8 @@
 """Rate Limiter - API 요청 제한"""
 from datetime import datetime, timedelta
 from fastapi import HTTPException
+import asyncio
+import time
 import logging
 
 logger = logging.getLogger(__name__)
@@ -66,3 +68,42 @@ def clear_rate_limit(user_id: str = None, action: str = None):
     else:
         if user_id in _request_timestamps:
             _request_timestamps[user_id].pop(action, None)
+
+
+class RateLimiter:
+    """
+    비동기 Rate Limiter (외부 API 호출용)
+
+    토큰 버킷 알고리즘을 사용하여 API 호출 속도를 제한합니다.
+    """
+
+    def __init__(self, max_calls: int, period: float):
+        """
+        Args:
+            max_calls: 기간 내 최대 호출 수
+            period: 기간 (초)
+        """
+        self.max_calls = max_calls
+        self.period = period
+        self.calls = []
+        self.lock = asyncio.Lock()
+
+    async def acquire(self):
+        """호출 허가를 획득 (필요시 대기)"""
+        async with self.lock:
+            now = time.time()
+
+            # 기간 밖의 오래된 호출 기록 제거
+            self.calls = [call_time for call_time in self.calls if now - call_time < self.period]
+
+            # 제한에 도달했으면 대기
+            if len(self.calls) >= self.max_calls:
+                sleep_time = self.period - (now - self.calls[0])
+                if sleep_time > 0:
+                    await asyncio.sleep(sleep_time)
+                    # 대기 후 다시 오래된 기록 제거
+                    now = time.time()
+                    self.calls = [call_time for call_time in self.calls if now - call_time < self.period]
+
+            # 현재 호출 기록
+            self.calls.append(now)
