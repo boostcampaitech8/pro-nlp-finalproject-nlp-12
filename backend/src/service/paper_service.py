@@ -3,14 +3,14 @@ from src.repository.summary_repository import SummaryRepository
 from src.service.paper.search_service import SearchService
 from src.service.paper.parse_service import ParseService
 from src.service.paper.summarize_service import SummarizeService
-from src.client.gpt_client import GPTClient
+from src.client.clova_client import ClovaClient
 
 class PaperService:
     def __init__(self, vectorstore, all_papers):
-        self.gpt_client = GPTClient()
+        self.clova_client = ClovaClient()
         self.search_service = SearchService(vectorstore, all_papers)
         self.parse_service = ParseService()
-        self.summarize_service = SummarizeService(self.gpt_client)
+        self.summarize_service = SummarizeService(self.clova_client)
 
     async def summarize_and_save(self, arxiv_id: str):
         """
