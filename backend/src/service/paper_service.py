@@ -1,11 +1,13 @@
 from src.repository.paper_repository import PaperRepository
 from src.repository.summary_repository import SummaryRepository
-from src.service.query_based_recommend.search_service import SearchService
-from src.service.query_based_recommend.parse_service import ParseService
-from src.service.query_based_recommend.summarize_service import SummarizeService
+from src.service.search.search_service import SearchService
+from src.service.summarization.parse_service import ParseService
+from src.service.summarization.summarize_service import SummarizeService
 from src.client.clova_client import ClovaClient
+from src.schemas.search import SearchResponse
+from typing import List
 
-class PaperService:
+class Paperervice:
     def __init__(self, vectorstore, all_papers):
         self.clova_client = ClovaClient()
         self.search_service = SearchService(vectorstore, all_papers)
@@ -33,22 +35,22 @@ class PaperService:
 
         SummaryRepository.save(paper_id, summary_infos)
 
-    async def hybrid_search(self, query: str = "Attention mechanism의 효율성과 연산량 최적화 방법"):
+    async def hybrid_search(self, query: str = "Attention mechanism의 효율성과 연산량 최적화 방법") -> List[SearchResponse]:
         """
         하이브리드 검색을 수행합니다.
         """
         results = await self.search_service.search(query)
         return [
-            {
-                "arxiv_id": doc.metadata.get("arxiv_id"),
-                "title": doc.metadata.get("title"),
-                "abstract": doc.metadata.get("abstract"),
-                "pdf_url": doc.metadata.get("pdf_url"),
-                "score": doc.metadata.get("rrf_score"),
+            SearchResponse(
+                arxiv_id=doc.metadata.get("arxiv_id"),
+                title=doc.metadata.get("title"),
+                abstract=doc.metadata.get("abstract"),
+                pdf_url=doc.metadata.get("pdf_url"),
+                score=doc.metadata.get("rrf_score"),
 
-                "sparse_rank": doc.metadata.get("sparse_rank"),
-                "dense_rank": doc.metadata.get("dense_rank"),
-                "final_rank": doc.metadata.get("final_rank"),
-            }
+                sparse_rank=doc.metadata.get("sparse_rank"),
+                dense_rank=doc.metadata.get("dense_rank"),
+                final_rank=doc.metadata.get("final_rank"),
+            )
             for doc in results
         ]
