@@ -56,21 +56,55 @@ export default function SearchPage() {
     }
   }, [hasMore, loadingMore, nextCursor, runSearch]);
 
-  // ✅ 처음엔 검색창만
+  // 처음엔 검색창만
   if (items === null) {
     return (
       <div style={{ padding: 24, display: "grid", placeItems: "center", minHeight: "70dvh" }}>
-        <form onSubmit={onSubmit} style={{ width: "min(720px, 100%)", display: "flex", gap: 8 }}>
-          <input
+        <div
+          style={{
+            width: "min(720px, 100%)",
+            padding: 20,
+            borderRadius: 20,
+            background: "rgba(255,255,255,0.9)",
+            border: "1px solid rgba(17, 18, 24, 0.08)",
+            boxShadow: "0 18px 50px rgba(17, 18, 24, 0.16)",
+            backdropFilter: "blur(12px)",
+          }}
+        >
+          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: "#111218" }}>
+            Quick Search
+          </div>
+          <form onSubmit={onSubmit} style={{ marginTop: 14, display: "flex", gap: 10 }}>
+            <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="검색어를 입력하세요 (예: RAG, retrieval, diffusion...)"
-            style={{ flex: 1, padding: 12, border: "1px solid #ddd", borderRadius: 10 }}
-          />
-          <button disabled={loading} style={{ padding: "12px 14px" }}>
+              style={{
+                flex: 1,
+                padding: "12px 14px",
+                border: "1px solid rgba(17, 18, 24, 0.12)",
+                borderRadius: 14,
+                background: "white",
+                fontSize: 14,
+                color: "#111218",
+              }}
+            />
+            <button
+            disabled={loading}
+            style={{
+              padding: "12px 16px",
+              borderRadius: 14,
+              border: "1px solid rgba(255, 107, 0, 0.4)",
+              background: "linear-gradient(135deg, #ff6b00 0%, #ff2d55 100%)",
+              color: "white",
+              fontWeight: 700,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
             {loading ? "검색중" : "검색"}
-          </button>
-        </form>
+            </button>
+          </form>
+        </div>
         {err && <div style={{ marginTop: 12, color: "crimson" }}>{err}</div>}
       </div>
     );

@@ -14,14 +14,21 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav id="bottom-nav"
+    <nav
+      id="bottom-nav"
       style={{
         position: "sticky",
         bottom: 0,
-        borderTop: "1px solid red",
-        background: "white",
+        margin: 0,
+        padding: "6px 8px",
+        borderRadius: 0,
+        background: "rgba(255,255,255,0.9)",
+        borderTop: "1px solid rgba(17,18,24,0.08)",
+        boxShadow: "0 -8px 18px rgba(17, 18, 24, 0.08)",
         display: "grid",
         gridTemplateColumns: "repeat(4, 1fr)",
+        gap: 6,
+        backdropFilter: "blur(10px)",
       }}
     >
       {items.map((it) => {
@@ -31,12 +38,16 @@ export default function BottomNav() {
             key={it.href}
             href={it.href}
             style={{
-              padding: 12,
+              padding: "10px 8px",
               textAlign: "center",
-              fontWeight: active ? 700 : 500,
-              opacity: active ? 1 : 0.6,
+              fontWeight: active ? 700 : 600,
+              opacity: active ? 1 : 0.65,
               textTransform: "capitalize",
-              color: 'black'
+              color: active ? "#111218" : "#3a3d4a",
+              borderRadius: 14,
+              background: active ? "rgba(255, 107, 0, 0.12)" : "transparent",
+              border: active ? "1px solid rgba(255, 107, 0, 0.35)" : "1px solid transparent",
+              transition: "all 0.2s ease",
             }}
           >
             {it.label}

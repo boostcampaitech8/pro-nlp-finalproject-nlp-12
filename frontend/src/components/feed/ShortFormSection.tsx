@@ -34,6 +34,8 @@ export default function ShortFormSection({
 
   const [progress, setProgress] = useState(0);
   const [navH, setNavH] = useState(navBarHeight);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionDir, setTransitionDir] = useState<"next" | "prev">("next");
 
   const impressedRef = useRef<Set<number>>(new Set());
 
@@ -50,6 +52,13 @@ export default function ShortFormSection({
   useEffect(() => {
     if (idx >= (items?.length ?? 0)) setIdx(0);
   }, [idx, items?.length]);
+
+  useEffect(() => {
+    if (!cur?.paper_id) return;
+    setIsTransitioning(true);
+    const t = window.setTimeout(() => setIsTransitioning(false), 260);
+    return () => window.clearTimeout(t);
+  }, [cur?.paper_id]);
 
   useEffect(() => {
     const el = document.getElementById("bottom-nav");
@@ -83,6 +92,8 @@ export default function ShortFormSection({
 
   const goNext = useCallback(() => {
     if (!items?.length) return;
+    setTransitionDir("next");
+    setPaused(false);
     // 다음으로 넘어갈 때 "이번 카드에서 누적된 시간" 초기화
     elapsedRef.current = 0;
     startedAtRef.current = Date.now();
@@ -93,6 +104,8 @@ export default function ShortFormSection({
 
   const goPrev = useCallback(() => {
     if (!items?.length) return;
+    setTransitionDir("prev");
+    setPaused(false);
     // 이전으로 넘어갈 때도 동일하게 초기화
     elapsedRef.current = 0;
     startedAtRef.current = Date.now();
@@ -117,7 +130,6 @@ export default function ShortFormSection({
     startedAtRef.current = Date.now();
 
     timerRef.current = window.setInterval(() => {
-      // ✅ 클로저 stale 방지: ref로 pause 상태 확인
       if (pausedRef.current) return;
 
       const now = Date.now();
@@ -136,7 +148,6 @@ export default function ShortFormSection({
     }, 50);
   }, [stopTimer, durationMs, items?.length]);
 
-  // ✅ 카드가 바뀌면 (진짜로 paper_id 바뀔 때만) 타이머 초기화
   useEffect(() => {
     elapsedRef.current = 0;
     startedAtRef.current = Date.now();
@@ -146,14 +157,13 @@ export default function ShortFormSection({
     return () => stopTimer();
   }, [cur?.paper_id, items?.length, startTimer, stopTimer]);
 
-  // ✅ pause 시점까지 진행된 시간 누적 / resume 시 기준점만 갱신
   useEffect(() => {
     if (paused) {
       const now = Date.now();
-      elapsedRef.current += now - startedAtRef.current; // ✅ 여기서 "지금까지" 누적
+      elapsedRef.current += now - startedAtRef.current; 
       // progress는 유지(리셋 X)
     } else {
-      startedAtRef.current = Date.now(); // ✅ 이어서 진행
+      startedAtRef.current = Date.now(); 
     }
   }, [paused]);
 
@@ -220,7 +230,7 @@ export default function ShortFormSection({
     console.log("onDetail cur =", cur);
     console.log("onDetail cur.paper_id =", cur.paper_id);
   
-    const paperId = cur.paper_id; // 네 주장대로 paper_id가 맞다면 이게 있어야 함
+    const paperId = cur.paper_id; 
   
     if (paperId === undefined || paperId === null) {
       console.error("paper_id is missing. cur =", cur);
@@ -247,12 +257,46 @@ export default function ShortFormSection({
   return (
     <div
       style={{
-        minHeight: "calc(100dvh - 72px)",
+        height: "100%",
         display: "grid",
         placeItems: "center",
-        padding: 16,
+        padding: "24px 16px",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
+      <div
+        aria-hidden
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            width: 520,
+            height: 520,
+            left: "-10%",
+            top: "-15%",
+            background: "radial-gradient(circle, rgba(255, 107, 0, 0.22), transparent 65%)",
+            filter: "blur(4px)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            width: 620,
+            height: 620,
+            right: "-15%",
+            bottom: "-20%",
+            background: "radial-gradient(circle, rgba(0, 194, 168, 0.2), transparent 68%)",
+            filter: "blur(6px)",
+          }}
+        />
+      </div>
       {toast && (
         <div
           style={{
@@ -278,18 +322,21 @@ export default function ShortFormSection({
           left: 0,
           right: 0,
           bottom: navH,
-          height: 4,
-          background: "rgba(255,255,255,0.22)",
-          zIndex: 9999,
+          height: 6,
+          background: "rgba(17, 18, 24, 0.08)",
+          zIndex: 40,
           pointerEvents: "none",
+          borderRadius: 0,
+          overflow: "hidden",
         }}
       >
         <div
           style={{
             height: "100%",
             width: `${Math.min(100, Math.max(0, progress * 100))}%`,
-            background: "red",
+            background: "linear-gradient(90deg, #ff6b00 0%, #ff2d55 60%, #ff9a3c 100%)",
             transition: "width 0.05s linear",
+            boxShadow: "0 0 12px rgba(255, 107, 0, 0.55)",
           }}
         />
       </div>
@@ -298,40 +345,74 @@ export default function ShortFormSection({
         style={{
           width: "min(980px, 100%)",
           display: "grid",
-          gridTemplateColumns: "1fr 92px",
-          gap: 16,
+          gridTemplateColumns: "1fr 96px",
+          gap: 20,
           alignItems: "center",
+          position: "relative",
+          zIndex: 1,
+          animation: isTransitioning
+            ? transitionDir === "next"
+              ? "slideInUpShorts 260ms ease both"
+              : "slideInDownShorts 260ms ease both"
+            : undefined,
         }}
       >
         <div
           style={{
-            border: "1px solid #e5e5e5",
-            borderRadius: 18,
+            border: "1px solid rgba(17, 18, 24, 0.08)",
+            borderRadius: 22,
             overflow: "hidden",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-            background: "#ffffff",
-            color: "#111",
+            boxShadow: "0 18px 50px rgba(17, 18, 24, 0.18)",
+            background: "rgba(255, 255, 255, 0.9)",
+            color: "#111218",
             opacity: 1,
-            filter: "none"
+            filter: "none",
+            backdropFilter: "blur(12px)",
+            height: "min(70dvh, 640px)",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          <div style={{ padding: 18, borderBottom: "1px solid #f0f0f0" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-              <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.25 }}>{cur.title}</div>
-
-              
+          <div style={{ padding: 20, borderBottom: "1px solid rgba(17, 18, 24, 0.08)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+              <div style={{ fontWeight: 700, fontSize: 22, lineHeight: 1.2, letterSpacing: "-0.02em" }}>
+                {cur.title}
+              </div>
             </div>
 
-            <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap", opacity: 0.75, fontSize: 12 }}>
-              {cur.primary_category && <span>• {cur.primary_category}</span>}
-              {cur.published_at && <span>• {cur.published_at.slice(0, 10)}</span>}
+            <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap", fontSize: 12, color: "#3a3d4a" }}>
+              {cur.primary_category && (
+                <span
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: 999,
+                    background: "rgba(17, 18, 24, 0.06)",
+                    border: "1px solid rgba(17, 18, 24, 0.08)",
+                  }}
+                >
+                  • {cur.primary_category}
+                </span>
+              )}
+              {cur.published_at && (
+                <span
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: 999,
+                    background: "rgba(0, 194, 168, 0.12)",
+                    border: "1px solid rgba(0, 194, 168, 0.35)",
+                    color: "#0b4f45",
+                  }}
+                >
+                  • {cur.published_at.slice(0, 10)}
+                </span>
+              )}
             </div>
 
             {libLoading && <div style={{ marginTop: 8, fontSize: 12, opacity: 0.6 }}>내 라이브러리 불러오는 중…</div>}
             {libErr && <div style={{ marginTop: 8, fontSize: 12, color: "crimson" }}>{libErr}</div>}
           </div>
 
-          <div style={{ padding: 18 }}>
+          <div style={{ padding: 20, flex: 1, display: "flex" }}>
             <div
               style={{
                 fontSize: 14,
@@ -341,6 +422,11 @@ export default function ShortFormSection({
                 WebkitLineClamp: 10,
                 WebkitBoxOrient: "vertical",
                 overflow: "hidden",
+                background: "rgba(17, 18, 24, 0.04)",
+                border: "1px solid rgba(17, 18, 24, 0.06)",
+                borderRadius: 16,
+                padding: 14,
+                width: "100%",
               }}
             >
               {cur.abstract}
@@ -349,8 +435,8 @@ export default function ShortFormSection({
 
           <div
             style={{
-              padding: 16,
-              borderTop: "1px solid #f0f0f0",
+              padding: 18,
+              borderTop: "1px solid rgba(17, 18, 24, 0.08)",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
@@ -364,13 +450,14 @@ export default function ShortFormSection({
                 disabled={likeDisabled}
                 aria-pressed={liked}
                 style={{
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  border: "1px solid #ddd",
+                  padding: "10px 14px",
+                  borderRadius: 999,
+                  border: "1px solid rgba(255, 107, 0, 0.4)",
                   opacity: likeDisabled ? 0.6 : 1,
                   fontWeight: 800,
                   cursor: likeDisabled ? "not-allowed" : "pointer",
-                  background: liked ? "rgba(255,0,0,0.08)" : "white",
+                  background: liked ? "rgba(255, 107, 0, 0.16)" : "white",
+                  boxShadow: liked ? "0 6px 16px rgba(255, 107, 0, 0.2)" : "none",
                 }}
               >
                 {liked ? "❤️ Liked" : "🤍 Like"}
@@ -381,13 +468,13 @@ export default function ShortFormSection({
                 disabled={bmDisabled}
                 aria-pressed={bookmarked}
                 style={{
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  border: "1px solid #ddd",
+                  padding: "10px 14px",
+                  borderRadius: 999,
+                  border: "1px solid rgba(17, 18, 24, 0.16)",
                   opacity: bmDisabled ? 0.6 : 1,
                   fontWeight: 800,
                   cursor: bmDisabled ? "not-allowed" : "pointer",
-                  background: bookmarked ? "rgba(0,0,0,0.06)" : "white",
+                  background: bookmarked ? "rgba(17, 18, 24, 0.08)" : "white",
                 }}
               >
                 {bookmarked ? "🔖 Bookmarked" : "📑 Bookmark"}
@@ -396,12 +483,13 @@ export default function ShortFormSection({
               <button
                 onClick={onDetail}
                 style={{
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  border: "1px solid #ddd",
+                  padding: "10px 14px",
+                  borderRadius: 999,
+                  border: "1px solid rgba(17, 18, 24, 0.1)",
                   fontWeight: 900,
                   cursor: "pointer",
-                  background: "white",
+                  background: "linear-gradient(135deg, #ff6b00 0%, #ff2d55 100%)",
+                  color: "white",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -412,7 +500,18 @@ export default function ShortFormSection({
               </button>
             </div>
 
-            <div style={{ opacity: 0.6, fontSize: 12 }}>키보드: ↑ 이전 / ↓ 다음 / Space 일시정지</div>
+            <div
+              style={{
+                opacity: 0.7,
+                fontSize: 12,
+                padding: "6px 10px",
+                borderRadius: 999,
+                background: "rgba(17, 18, 24, 0.06)",
+                border: "1px solid rgba(17, 18, 24, 0.08)",
+              }}
+            >
+              키보드: ↑ 이전 / ↓ 다음 / Space 일시정지
+            </div>
           </div>
         </div>
 
@@ -421,14 +520,14 @@ export default function ShortFormSection({
             onClick={goPrev}
             style={{
               height: 46,
-              borderRadius: 14,
-              border: "1px solid #e5e5e5",
-              background: "white",
+              borderRadius: 16,
+              border: "1px solid rgba(17, 18, 24, 0.12)",
+              background: "rgba(255,255,255,0.92)",
               cursor: "pointer",
               display: "grid",
               placeItems: "center",
-              boxShadow: "0 6px 16px rgba(0,0,0,0.06)",
-              color: 'black'
+              boxShadow: "0 10px 20px rgba(17, 18, 24, 0.12)",
+              color: "#8d90a1"
             }}
             title="이전 (↑)"
           >
@@ -439,14 +538,14 @@ export default function ShortFormSection({
             onClick={goNext}
             style={{
               height: 46,
-              borderRadius: 14,
-              border: "1px solid #e5e5e5",
-              background: "white",
+              borderRadius: 16,
+              border: "1px solid rgba(17, 18, 24, 0.12)",
+              background: "rgba(255,255,255,0.92)",
               cursor: "pointer",
               display: "grid",
               placeItems: "center",
-              boxShadow: "0 6px 16px rgba(0,0,0,0.06)",
-              color: 'black'
+              boxShadow: "0 10px 20px rgba(17, 18, 24, 0.12)",
+              color: "#8d90a1"
             }}
             title="다음 (↓)"
           >
@@ -457,17 +556,19 @@ export default function ShortFormSection({
             onClick={togglePause}
             style={{
               height: 46,
-              borderRadius: 14,
-              border: "1px solid #e5e5e5",
-              background: paused ? "rgba(0,0,0,0.06)" : "white",
+              borderRadius: 16,
+              border: "1px solid rgba(17, 18, 24, 0.12)",
+              background: paused
+                ? "linear-gradient(135deg, #ff6b00 0%, #ff2d55 100%)"
+                : "rgba(255,255,255,0.92)",
               cursor: "pointer",
               display: "grid",
               placeItems: "center",
-              boxShadow: "0 6px 16px rgba(0,0,0,0.06)",
+              boxShadow: "0 10px 20px rgba(17, 18, 24, 0.12)",
             }}
             title="일시정지/재생 (Space)"
           >
-            {paused ? <Play color="white" /> : <Pause color="black"/>}
+            {paused ? <Play color="white" /> : <Pause color="#8d90a1" />}
           </button>
         </div>
       </div>
