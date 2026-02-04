@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class EventType(enum.Enum):
     like = "like"          # 좋아요
     bookmark = "bookmark"  # 북마크
-    click_count = "click_count"  # 클릭 횟수
+    click = "click"        # 클릭
 
 class UserEvent(Base):
     """

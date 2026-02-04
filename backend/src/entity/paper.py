@@ -35,7 +35,6 @@ class Paper(Base):
         nullable=False
     )
     pdf_url: Mapped[Optional[str]] = mapped_column(String(1000))
-    abs_url: Mapped[Optional[str]] = mapped_column(Text)
     abstract: Mapped[str] = mapped_column(
         Text,
         nullable=False
