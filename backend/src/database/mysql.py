@@ -1,40 +1,29 @@
-from dotenv import load_dotenv
-import os
+"""MySQL 데이터베이스 연결 설정"""
+from typing import Generator
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-from contextlib import contextmanager
+from sqlalchemy.orm import sessionmaker, Session
+from src.config.settings import settings
 
-load_dotenv()
-
-# 환경 변수 로드
-MYSQL_HOST = os.getenv("MYSQL_HOST")
-MYSQL_PORT = os.getenv("MYSQL_PORT")
-MYSQL_USER = os.getenv("MYSQL_USER")
-MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
-MYSQL_DB = os.getenv("MYSQL_DB")
-
-# SQLAlchemy용 데이터베이스 URL 생성
-DATABASE_URL = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}?charset=utf8mb4"
-
-# Engine 생성
+# SQLAlchemy Engine 생성
 engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True  # 연결 유효성 체크
+    settings.DB_URL,
+    pool_pre_ping=True,         # 연결 유효성 체크
+    pool_recycle=3600,          # 1시간마다 연결 재설정
+    echo=settings.DEBUG,        # DEBUG 모드에서 SQL 로깅
 )
 
-# 세션 설정
+# 세션 팩토리
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# 모델 생성을 위한 기본 클래스
-Base = declarative_base()
 
-@contextmanager
-def get_mysql_db():
+def get_db() -> Generator[Session, None, None]:
     """
-    MySQL 연결을 생성하고 사용 후 안전하게 닫습니다.
+    의존성 주입용 데이터베이스 세션 제공자
+    
+    Usage:
+        db: Session = Depends(get_db)
     """
     db = SessionLocal()
-
     try:
         yield db
     finally:

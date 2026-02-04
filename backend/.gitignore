@@ -1,2 +1,46 @@
+# Python
 .venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# 환경 설정
 .env
+.env.local
+.env.*.local
+
+# 데이터베이스
+instance/
+*.sqlite3
+
+# FAISS 인덱스 (용량 크고 재생성 가능)
+*.faiss
+*.bin
+faiss_index/
+
+# 데이터 수집 체크포인트
+data_collection_checkpoints/
+scripts/data_collection/data_collection_checkpoints/
+
+# 테스트/커버리지
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# 기타
+migrations/
+*.log
+logs/
+collection_log_*.txt
