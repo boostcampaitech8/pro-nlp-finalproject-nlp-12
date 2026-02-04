@@ -89,7 +89,8 @@ class SearchService:
         의미 기반 검색기 반환
         """
         def search_faiss(query: str):
-            results = self.faiss_service.search_by_text(query, k=60)
+            results = self.faiss_service.search(query, k=60)
+            print(results[0])
             return [
                 Document(
                     page_content=f"Title: {res.get("title")}\nAbstract: {res.get("abstract")}",

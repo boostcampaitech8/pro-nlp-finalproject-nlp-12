@@ -64,7 +64,7 @@ class FAISSService:
                 self._index = faiss.IndexFlatIP(settings.EMBEDDING_DIM)
                 self._id_map = {}
                 return self._index, self._id_map
-
+            
             logger.info(f"Loading FAISS index from {self.index_file}")
             self._index = faiss.read_index(str(self.index_file))
 
@@ -76,13 +76,14 @@ class FAISSService:
         except Exception as e:
             logger.error(f"Error loading FAISS index: {e}")
             return None, None
-
-    def search(self, query_vector: np.ndarray, k: int = 10):
+        
+    # [수정] query_vector: np.ndarray -> query: str
+    def search(self, query: str, k: int = 10):
         """
         벡터 유사도 검색
 
         Args:
-            query_vector: (EMBEDDING_DIM,) 형태의 검색 쿼리
+            query: 검색 쿼리
             k: 반환할 결과 수
 
         Returns:
@@ -91,10 +92,13 @@ class FAISSService:
         index, id_map = self.load_index()
         if index is None or index.ntotal == 0:
             return []
+        
+        query_vector = self.embeddings.embed_query(query)
+        query_vector = np.array(query_vector)
 
         # 배치 형태로 변환
-        query = query_vector.reshape(1, -1).astype(np.float32)
-        distances, indices = index.search(query, min(k, index.ntotal))
+        query_vector = query_vector.reshape(1, -1).astype(np.float32)
+        distances, indices = index.search(query_vector, min(k, index.ntotal))
 
         ### 수정사항: mvp2처럼 풍부한 결과 반환
         results = []
