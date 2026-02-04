@@ -34,9 +34,8 @@ class Paper(Base):
         String(500),
         nullable=False
     )
-    pdf_url: Mapped[Optional[str]] = mapped_column(
-        String(1000)
-    )
+    pdf_url: Mapped[Optional[str]] = mapped_column(String(1000))
+    abs_url: Mapped[Optional[str]] = mapped_column(Text)
     abstract: Mapped[str] = mapped_column(
         Text,
         nullable=False
@@ -46,7 +45,7 @@ class Paper(Base):
     reference_count: Mapped[Optional[int]] = mapped_column(Integer)
     published_date: Mapped[Optional[date]] = mapped_column(Date)
     updated_date: Mapped[Optional[date]] = mapped_column(Date)
-    
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         server_default=func.now(),
