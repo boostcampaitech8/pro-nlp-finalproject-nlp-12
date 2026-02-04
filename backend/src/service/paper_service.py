@@ -15,12 +15,12 @@ class PaperService:
         self.parse_service = ParseService()
         self.summarize_service = SummarizeService(self.clova_client)
 
-    async def summarize_and_save(self, arxiv_id: str):
+    # [수정] 파라미터 추가: arxiv_id -> arxiv_id + pdf_url
+    async def summarize_and_save(self, arxiv_id: str, pdf_url: str):
         """
         논문을 번역 및 요약한 후 DB에 저장합니다.
         """
         # pdf 파싱 및 요약, 번역
-        pdf_url = f"https://arxiv.org/pdf/{arxiv_id}.pdf"
         pdf_text = await self.parse_service.get_text_by_url(pdf_url)
         response = await self.summarize_service.summarize(pdf_text)
 
