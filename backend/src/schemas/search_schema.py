@@ -1,15 +1,13 @@
 from pydantic import BaseModel, HttpUrl
+from datetime import date
 
 class SearchResponse(BaseModel):
     """
     논문 검색 결과를 관리하는 스키마입니다.
     """
+    paper_id: int
     arxiv_id: str
     title: str
-    abstract: str
     pdf_url: HttpUrl
-
-    score: float
-    sparse_rank: int
-    dense_rank: int
-    final_rank: int
+    published_date: date
+    summary: str

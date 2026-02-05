@@ -1,5 +1,6 @@
 from src.database.mysql import get_mysql_db
-from src.entity.summary import Summary
+from src.entity.summary import Summary, SummaryType
+from src.entity.paper import Paper
 from typing import List, Dict
 
 class SummaryRepository:
@@ -22,14 +23,29 @@ class SummaryRepository:
         ]
         """
         with get_mysql_db() as db:
-            summaries = [
-                Summary(
+            for summary_info in summary_infos:
+                new_summary = Summary(
                     summary_type=summary_info.get("summary_type"),
                     summary_text=summary_info.get("summary_text"),
                     paper_id=paper_id
                 )
-                for summary_info in summary_infos
-            ]
-
-            db.add_all(summaries)
+                
+                db.add(new_summary)
             db.commit()
+
+    @staticmethod
+    def get_summaries_except_keypoint(paper_id: int):
+        """
+        keypoint를 제외한 요약을 반환합니다.
+        """
+        with get_mysql_db() as db:
+            results = db.query(
+                Summary.paper_id,
+                Summary.summary_type,
+                Summary.summary_text
+            ).filter(
+                Summary.paper_id==paper_id,
+                Summary.summary_type!=SummaryType.keypoint  # keypoint 제외
+            ).all()
+
+            return results

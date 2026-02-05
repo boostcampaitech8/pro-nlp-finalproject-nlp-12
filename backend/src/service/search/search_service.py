@@ -95,10 +95,7 @@ class SearchService:
                 Document(
                     page_content=f"Title: {res.get("title")}\nAbstract: {res.get("abstract")}",
                     metadata={
-                        "arxiv_id": res.get("arxiv_id"),
-                        "title": res.get("title"),
-                        "pdf_url": res.get("pdf_url"),
-                        "abstract": res.get("abstract"),
+                        **res,  # 기존의 모든 메타데이터(paper_id, summary 등)를 한 번에 주입
                         "score": res.get("score")
                     }
                 ) for res in results

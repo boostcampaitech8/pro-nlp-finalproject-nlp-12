@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import src.entity
-from src.api import search
+from src.api import search, summary
 from src.entity.base import init_db
 from src.service.paper_service import PaperService
 from src.service.faiss_service import faiss_service
@@ -40,6 +40,7 @@ app.add_middleware(
 )
 
 app.include_router(search.router)
+app.include_router(summary.router)
 
 @app.get("/")
 def read_root():

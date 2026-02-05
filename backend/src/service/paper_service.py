@@ -1,10 +1,12 @@
 from src.repository.paper_repository import PaperRepository
 from src.repository.summary_repository import SummaryRepository
+from src.repository.user_event_repository import UserEventRepository
 from src.service.search.search_service import SearchService
 from src.service.summarization.parse_service import ParseService
 from src.service.summarization.summarize_service import SummarizeService
 from src.client.clova_client import ClovaClient
-from src.schemas.search import SearchResponse
+from src.schemas.search_schema import SearchResponse
+from src.schemas.summary_schema import SummaryResponse
 from langchain_core.documents import Document
 from typing import List
 
@@ -15,7 +17,6 @@ class PaperService:
         self.parse_service = ParseService()
         self.summarize_service = SummarizeService(self.clova_client)
 
-    # [수정] 파라미터 추가: arxiv_id -> arxiv_id + pdf_url
     async def summarize_and_save(self, arxiv_id: str, pdf_url: str):
         """
         논문을 번역 및 요약한 후 DB에 저장합니다.
@@ -43,15 +44,30 @@ class PaperService:
         results = await self.search_service.search(query)
         return [
             SearchResponse(
+                paper_id=doc.metadata.get("paper_id"),
                 arxiv_id=doc.metadata.get("arxiv_id"),
                 title=doc.metadata.get("title"),
-                abstract=doc.metadata.get("abstract"),
                 pdf_url=doc.metadata.get("pdf_url"),
-                score=doc.metadata.get("rrf_score"),
-
-                sparse_rank=doc.metadata.get("sparse_rank"),
-                dense_rank=doc.metadata.get("dense_rank"),
-                final_rank=doc.metadata.get("final_rank"),
+                published_date=doc.metadata.get("published_date"),
+                summary=doc.metadata.get("summary")
             )
             for doc in results
+        ]
+    
+    def get_summaries_and_log_click(self, user_id: int, paper_id: int) -> List[SummaryResponse]:
+        """
+        클릭 이벤트를 저장하고, keypoint를 제외한 요약을 반환합니다.
+        """
+        # 클릭 로그 저장
+        UserEventRepository.save_click(user_id, paper_id)
+
+        # 논문 요약 조회 및 반환
+        results = SummaryRepository.get_summaries_except_keypoint(paper_id)
+
+        return [
+            SummaryResponse(
+                paper_id=r.paper_id,
+                summary_type=r.summary_type,
+                summary_text=r.summary_text
+            ) for r in results
         ]
