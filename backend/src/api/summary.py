@@ -19,6 +19,6 @@ async def read_summaries(
     service: PaperService = Depends(get_paper_service)    
 ):
     """
-    논문 검색 결과를 반환합니다.
+    클릭 이벤트를 저장하고 논문 요약본을 반환합니다.
     """
     return service.get_summaries_and_log_click(request.user_id, request.paper_id)
