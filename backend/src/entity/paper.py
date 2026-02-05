@@ -8,7 +8,6 @@ from typing import Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
     from src.entity.user_event import UserEvent
     from src.entity.citation_edge import CitationEdge
-    from src.entity.feed import Feed
     from src.entity.summary import Summary
     from src.entity.primary_category import PrimaryCategory
     from src.entity.paper_category import PaperCategory

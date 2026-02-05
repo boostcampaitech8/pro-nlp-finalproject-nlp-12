@@ -10,7 +10,6 @@ def init_db():
     """
     from src.entity.category import Category
     from src.entity.citation_edge import CitationEdge
-    from src.entity.feed import Feed
     from src.entity.paper_category import PaperCategory
     from src.entity.paper import Paper
     from src.entity.primary_category import PrimaryCategory
