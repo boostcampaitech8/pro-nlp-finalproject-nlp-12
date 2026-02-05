@@ -9,16 +9,18 @@ from src.schemas.search import SearchResponse
 from src.schemas.summary import SummaryResponse
 from src.entity.user_event import EventType
 from langchain_core.documents import Document
+from sqlalchemy.orm import Session
 from typing import List
 
 class PaperService:
-    def __init__(self, faiss_service, all_docs: list[Document]):
+    def __init__(self, db: Session, faiss_service, all_docs: list[Document]):
+        self.db = db
         self.clova_client = ClovaClient()
         self.search_service = SearchService(faiss_service, all_docs)
         self.parse_service = ParseService()
         self.summarize_service = SummarizeService(self.clova_client)
-        self.paper_repository = PaperRepository()
-        self.event_repository = EventRepository()
+        self.paper_repository = PaperRepository(self.db)
+        self.event_repository = EventRepository(self.db)
 
     async def summarize_and_save(self, arxiv_id: str, pdf_url: str):
         """

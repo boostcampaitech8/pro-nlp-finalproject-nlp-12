@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from src.database.mysql import get_db
+from src.database.mysql import get_mysql_db
 from src.schemas.feed import FeedResponse, FeedItem
 from src.service.recsys_service import RecSysService
 from src.service.smart_recommend_service import SmartRecommendService
@@ -17,7 +17,7 @@ def get_feed(
     # /feed?user_id=u1&k=5 테스트용
     k: int | None = None,
     mode: str = Query("quick", pattern="^(quick|smart|fast)$"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_mysql_db),
 ):
     if k is not None:
         limit = k

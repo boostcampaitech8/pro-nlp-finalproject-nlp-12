@@ -67,11 +67,6 @@ class Paper(Base):
         back_populates="paper",
         cascade="all, delete-orphan"
     )
-    feeds: Mapped[List["Feed"]] = relationship(
-        "Feed",
-        back_populates="paper",
-        cascade="all, delete-orphan"
-    )
     citations_out: Mapped[List["CitationEdge"]] = relationship(
         "CitationEdge",
         foreign_keys="[CitationEdge.seed_id]",

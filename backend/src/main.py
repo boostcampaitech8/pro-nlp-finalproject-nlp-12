@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from src.api import search, summary, admin, events, feed, library, users
 from src.client.faiss_store import get_faiss_store
-from src.service.paper_service import PaperService
 from src.repository.paper_repo import PaperRepository
 from src.entity.base import init_db
 import uvicorn
@@ -13,15 +12,29 @@ async def lifespan(app: FastAPI):
     # DB 초기화
     init_db()
 
-    # 논문 가져오기
-    all_papers = PaperRepository.get_papers_as_documents()
+    # 서버 시작 시 초기 데이터 로딩
+    from src.database.mysql import get_mysql_db
 
-    # Faiss 인스턴스 생성 및 신규 논문 업데이트
-    faiss_store = get_faiss_store(dim=1024, index_path="data/faiss/index.bin")
-    faiss_store.update_papers(all_papers)
+    db_gen = get_mysql_db()
+    db = next(db_gen)  # generator에서 세션을 수동으로 꺼냄
 
-    # app.state에 서비스 인스턴스 저장(어디서든 꺼내 쓸 수 있음)
-    app.state.paper_service = PaperService(faiss_store, all_papers)
+    try:
+        # 논문 가져오기
+        paper_repository = PaperRepository(db)
+        all_papers = paper_repository.get_papers_as_documents()
+
+        # Faiss 인스턴스 생성 및 신규 논문 업데이트
+        faiss_store = get_faiss_store()
+        faiss_store.update_papers(all_papers)
+
+        app.state.faiss_store = faiss_store
+        app.state.all_papers = all_papers
+    finally:
+        # 세션 반환
+        try:
+            next(db_gen)
+        except StopIteration:
+            pass
 
     yield
 

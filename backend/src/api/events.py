@@ -1,23 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from src.database.mysql import SessionLocal
+from src.database.mysql import get_mysql_db
 from src.schemas.event import EventCreate
 from src.service.recsys_service import RecSysService
 
 router = APIRouter(prefix="/events", tags=["events"])
 
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 @router.post("", response_model=dict)
-def create_event(payload: EventCreate, db: Session = Depends(get_db)):
+def create_event(payload: EventCreate, db: Session = Depends(get_mysql_db)):
     svc = RecSysService(db)
 
     # 유효한 event_type인지 검증

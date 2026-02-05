@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, Request
 from src.service.paper_service import PaperService
-from backend.src.schemas.summary import SummaryRequest, SummaryResponse
+from src.schemas.summary import SummaryRequest, SummaryResponse
+from sqlalchemy.orm import Session
+from src.database.mysql import get_mysql_db
 from typing import List
 
 router = APIRouter(
@@ -9,8 +11,13 @@ router = APIRouter(
 )
 
 # 서비스 인스턴스를 관리하는 함수(의존성 주입용)
-def get_paper_service(request: Request) -> PaperService:
-    return request.app.state.paper_service
+def get_paper_service(
+    request: Request,
+    db: Session = Depends(get_mysql_db)
+) -> PaperService:
+    faiss_store = request.app.state.faiss_store
+    all_papers = request.app.state.all_papers
+    return PaperService(db, faiss_store, all_papers)
 
 @router.post("/", response_model=List[SummaryResponse])
 async def read_summaries(

@@ -5,6 +5,7 @@ import faiss
 from langchain_huggingface import HuggingFaceEmbeddings
 # [추가] Document type 표시를 위해 추가
 from langchain_core.documents import Document
+from config import settings
 
 def _l2_normalize(x: np.ndarray) -> np.ndarray:
     norms = np.linalg.norm(x, axis=1, keepdims=True) + 1e-12
@@ -19,7 +20,7 @@ class FaissStore:
     - reconstruct(paper_id)로 해당 논문 임베딩을 다시 가져올 수 있음
     """
 
-    def __init__(self, dim: int, index_path: str, model_name: str = "BAAI/bge-m3"):
+    def __init__(self, dim: int, index_path: str, model_name: str):
         self.dim = int(dim)
         self.index_path = index_path
         self.index = self._load_or_create()
@@ -168,8 +169,12 @@ class FaissStore:
 # 싱글톤 getter (원하면 DI로 바꿔도 됨)
 _STORE = None
 
-def get_faiss_store(dim: int, index_path: str) -> FaissStore:
+def get_faiss_store(
+    dim: int = settings.EMBED_DIM,
+    index_path: str = settings.FAISS_INDEX_PATH,
+    model_name: str = settings.EMBED_MODEL
+) -> FaissStore:
     global _STORE
     if _STORE is None:
-        _STORE = FaissStore(dim=dim, index_path=index_path)
+        _STORE = FaissStore(dim=dim, index_path=index_path, model_name=model_name)
     return _STORE
