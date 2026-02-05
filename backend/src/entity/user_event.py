@@ -39,7 +39,7 @@ class UserEvent(Base):
         nullable=False
     )
     event_type: Mapped[EventType] = mapped_column(
-        Enum(EventType),
+        Enum(EventType, native_enum=False),
         nullable=False
     )
 

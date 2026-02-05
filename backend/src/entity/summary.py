@@ -14,7 +14,7 @@ class SummaryType(enum.Enum):
     methodology = "methodology"    # 주요 방법론
     performance = "performance"    # 실험 및 성과
     significance = "significance"  # 의의 및 향후 영향력
-    keypoint = "keypoint"  # 핵심 포인트(쉬운 요약) 
+    keypoint = "keypoint"          # 핵심 포인트(쉬운 요약) 
 
 class Summary(Base):
     """
@@ -39,7 +39,7 @@ class Summary(Base):
         nullable=False
     )
     summary_type: Mapped[SummaryType] = mapped_column(
-        Enum(SummaryType),
+        Enum(SummaryType, native_enum=False),
         nullable=False
     )
 
