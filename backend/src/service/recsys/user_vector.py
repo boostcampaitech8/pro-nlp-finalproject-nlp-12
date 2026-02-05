@@ -40,14 +40,16 @@ def maybe_refresh_user_vector(*, user_id: str, profile_repo, event_repo, faiss_s
     if not evs:
         return
 
-    # weight map
+    # weight map (event_type 기반)
     w_map: Dict[int, float] = {}
     for e in evs:
         pid = getattr(e, "paper_id", None)
         if pid is None:
             continue
+        et = getattr(e, "event_type", None)
+        w = float(EVENT_WEIGHTS.get(et, 0.0))
         try:
-            w_map[int(pid)] = float(getattr(e, "weight", 0.0))
+            w_map[int(pid)] = w
         except Exception:
             w_map[int(pid)] = 0.0
 

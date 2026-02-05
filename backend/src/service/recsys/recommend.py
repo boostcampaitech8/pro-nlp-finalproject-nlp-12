@@ -122,6 +122,8 @@ def fallback_page(
     base_stmt = select(paper_model)
     if hasattr(paper_model, "published_at"):
         base_stmt = base_stmt.order_by(desc(getattr(paper_model, "published_at")))
+    elif hasattr(paper_model, "published_date"):
+        base_stmt = base_stmt.order_by(desc(getattr(paper_model, "published_date")))
     else:
         base_stmt = base_stmt.order_by(desc(getattr(paper_model, "id")))
 
@@ -170,16 +172,47 @@ def _load_papers_by_ids(*, db, paper_model, ids: List[int]):
 
 def _paper_to_item(p, score: float):
     pid = getattr(p, "id", None)
+
+    arxiv_id = getattr(p, "arxiv_id", None)
+    abs_url = getattr(p, "abs_url", None)
+    if abs_url is None and arxiv_id:
+        abs_url = f"https://arxiv.org/abs/{arxiv_id}"
+
+    published_at = getattr(p, "published_at", None) or getattr(p, "published_date", None)
+    published_at = published_at.isoformat() if published_at else None
+
+    primary_category = None
+    pc = getattr(p, "primary_category", None)
+    if pc is not None:
+        cat = getattr(pc, "category", None)
+        if cat is not None:
+            primary_category = getattr(cat, "category_type", None)
+
+    categories = None
+    pcs = getattr(p, "paper_categories", None) or []
+    cat_list = []
+    for x in pcs:
+        cat = getattr(x, "category", None)
+        if cat is None:
+            continue
+        ct = getattr(cat, "category_type", None)
+        if ct:
+            cat_list.append(ct)
+    if cat_list:
+        categories = ", ".join(cat_list)
+
+    authors = getattr(p, "authors", None) or ""
+
     return {
         "paper_id": int(pid) if pid is not None else None,
         "score": float(score),
-        "arxiv_id": getattr(p, "arxiv_id", None),
+        "arxiv_id": arxiv_id,
         "title": getattr(p, "title", None),
-        "abstract": getattr(p, "abstract", None),
-        "authors": getattr(p, "authors", None),
-        "primary_category": getattr(p, "primary_category", None),
-        "categories": getattr(p, "categories", None),
-        "published_at": getattr(p, "published_at", None).isoformat() if getattr(p, "published_at", None) else None,
-        "abs_url": getattr(p, "abs_url", None),
+        "abstract": getattr(p, "abstract", None) or "",
+        "authors": authors,
+        "primary_category": primary_category,
+        "categories": categories,
+        "published_at": published_at,
+        "abs_url": abs_url,
         "pdf_url": getattr(p, "pdf_url", None),
     }

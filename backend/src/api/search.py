@@ -42,17 +42,42 @@ def search_papers(
 
     items = []
     for p in ordered:
+        arxiv_id = getattr(p, "arxiv_id", None)
+        abs_url = getattr(p, "abs_url", None)
+        if abs_url is None and arxiv_id:
+            abs_url = f"https://arxiv.org/abs/{arxiv_id}"
+
+        published_at = getattr(p, "published_at", None) or getattr(p, "published_date", None)
+        if published_at is not None:
+            try:
+                published_at = published_at.isoformat()
+            except Exception:
+                pass
+
+        categories = None
+        pcs = getattr(p, "paper_categories", None) or []
+        cat_list = []
+        for x in pcs:
+            cat = getattr(x, "category", None)
+            if cat is None:
+                continue
+            ct = getattr(cat, "category_type", None)
+            if ct:
+                cat_list.append(ct)
+        if cat_list:
+            categories = ", ".join(cat_list)
+
         items.append({
-            "paper_id": getattr(p, "paper_id", None) or p.id,  
+            "paper_id": getattr(p, "paper_id", None) or p.id,
             "id": p.id,
             "title": p.title,
             "abstract": p.abstract,
-            "authors": getattr(p, "authors", None),
-            "categories": getattr(p, "categories", None),
-            "published_at": getattr(p, "published_at", None),
+            "authors": getattr(p, "authors", None) or "",
+            "categories": categories,
+            "published_at": published_at,
             "year": getattr(p, "year", None),
-            "arxiv_id": getattr(p, "arxiv_id", None),
-            "abs_url": getattr(p, "abs_url", None),
+            "arxiv_id": arxiv_id,
+            "abs_url": abs_url,
             "pdf_url": getattr(p, "pdf_url", None),
         })
 

@@ -20,7 +20,8 @@ def get_db():
 def create_event(payload: EventCreate, db: Session = Depends(get_db)):
     svc = RecSysService(db)
 
-    w = svc.get_weight(payload.event_type)
+    # 유효한 event_type인지 검증
+    svc.get_weight(payload.event_type)
 
     # like / bookmark 는 토글
     if payload.event_type in ("like", "bookmark"):
@@ -28,7 +29,6 @@ def create_event(payload: EventCreate, db: Session = Depends(get_db)):
             user_id=payload.user_id,
             paper_id=payload.paper_id,
             event_type=payload.event_type,
-            weight=w,
         )
 
         # dirty flag (벡터 재계산은 나중에 feed에서)
@@ -51,7 +51,6 @@ def create_event(payload: EventCreate, db: Session = Depends(get_db)):
             user_id=payload.user_id,
             paper_id=payload.paper_id,
             event_type=payload.event_type,
-            weight=w,
         )
     
         if payload.event_type == "click":

@@ -35,8 +35,9 @@ export type FeedItem = {
   is_bookmarked?: boolean;
 };
 
-export async function getFeed(user_id: string, k = 20, cursor?: string | null) {
+export async function getFeed(user_id: string, k = 20, cursor?: string | null, mode?: "fast" | "quick" | "smart") {
   const c = cursor ? `&cursor=${encodeURIComponent(cursor)}` : "";
+  const m = mode ? `&mode=${encodeURIComponent(mode)}` : "";
   return http<{
     user_id: string;
     k?: number | null;
@@ -44,7 +45,7 @@ export async function getFeed(user_id: string, k = 20, cursor?: string | null) {
     items: FeedItem[];
     next_cursor?: string | null;
     has_more?: boolean;
-  }>(`/feed?user_id=${encodeURIComponent(user_id)}&k=${k}${c}`);
+  }>(`/feed?user_id=${encodeURIComponent(user_id)}&k=${k}${c}${m}`);
 }
 
 /**

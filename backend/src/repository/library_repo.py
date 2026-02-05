@@ -1,13 +1,71 @@
+from datetime import date, datetime, time
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 
 from src.entity.paper import Paper
 from src.entity.user_event import UserEvent
+from src.entity.user import User
+
+
+def _to_datetime(dt: datetime | date | None) -> datetime | None:
+    if dt is None:
+        return None
+    if isinstance(dt, datetime):
+        return dt
+    if isinstance(dt, date):
+        return datetime.combine(dt, time.min)
+    return None
+
+
+def _paper_fields(p: Paper) -> dict:
+    arxiv_id = getattr(p, "arxiv_id", None)
+    abs_url = getattr(p, "abs_url", None)
+    if abs_url is None and arxiv_id:
+        abs_url = f"https://arxiv.org/abs/{arxiv_id}"
+
+    published_at = _to_datetime(getattr(p, "published_at", None) or getattr(p, "published_date", None))
+
+    primary_category = None
+    pc = getattr(p, "primary_category", None)
+    if pc is not None:
+        cat = getattr(pc, "category", None)
+        if cat is not None:
+            primary_category = getattr(cat, "category_type", None)
+
+    categories = None
+    pcs = getattr(p, "paper_categories", None) or []
+    cat_list = []
+    for x in pcs:
+        cat = getattr(x, "category", None)
+        if cat is None:
+            continue
+        ct = getattr(cat, "category_type", None)
+        if ct:
+            cat_list.append(ct)
+    if cat_list:
+        categories = ", ".join(cat_list)
+
+    authors = getattr(p, "authors", None) or ""
+
+    return {
+        "title": getattr(p, "title", None),
+        "abstract": getattr(p, "abstract", None),
+        "authors": authors,
+        "abs_url": abs_url,
+        "pdf_url": getattr(p, "pdf_url", None),
+        "published_at": published_at,
+        "primary_category": primary_category,
+        "categories": categories,
+    }
 
 
 class LibraryRepository:
     def __init__(self, db: Session):
         self.db = db
+
+    def _get_user_id(self, user_uuid: str) -> int | None:
+        user = self.db.query(User).filter(User.uuid == user_uuid).first()
+        return user.id if user else None
 
     def list_library(
         self,
@@ -17,6 +75,10 @@ class LibraryRepository:
         limit: int,
         offset: int,
     ):
+        user_pk = self._get_user_id(user_id)
+        if user_pk is None:
+            return 0, []
+
         # type 필터
         if event_type == "all":
             types = ["like", "bookmark"]
@@ -32,14 +94,14 @@ class LibraryRepository:
                 func.max(UserEvent.created_at).label("max_created_at"),
             )
             .filter(
-                UserEvent.user_id == user_id,
+                UserEvent.user_id == user_pk,
                 UserEvent.event_type.in_(types),
             )
             .group_by(UserEvent.user_id, UserEvent.paper_id, UserEvent.event_type)
             .subquery()
         )
 
-        # 최신 이벤트 row만 join해서 가져오기 + weight > 0 만 “활성”으로 간주
+        # 최신 이벤트 row만 join해서 가져오기
         base_q = (
             self.db.query(UserEvent, Paper)
             .join(
@@ -52,7 +114,6 @@ class LibraryRepository:
                 ),
             )
             .join(Paper, Paper.id == UserEvent.paper_id)
-            .filter(UserEvent.weight > 0)
             .order_by(UserEvent.created_at.desc())
         )
 
@@ -61,17 +122,13 @@ class LibraryRepository:
 
         items = []
         for ev, p in rows:
+            fields = _paper_fields(p)
             items.append(
                 {
                     "paper_id": p.id,
                     "event_type": ev.event_type,
                     "created_at": ev.created_at,
-                    "title": getattr(p, "title", None),
-                    "abstract": getattr(p, "abstract", None),
-                    "authors": getattr(p, "authors", None),
-                    "abs_url": getattr(p, "abs_url", None),
-                    "pdf_url": getattr(p, "pdf_url", None),
-                    "published_at": getattr(p, "published_at", None),
+                    **fields,
                 }
             )
 

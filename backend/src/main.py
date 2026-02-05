@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # DB 초기화
 from src.database.mysql import engine
 from src.entity.base import Base
+import src.entity  # noqa: F401
 
 
 # 모든 모델 import (metadata 인식용) create_all 안하니깐 일단은 주석처리

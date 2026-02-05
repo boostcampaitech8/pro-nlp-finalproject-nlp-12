@@ -26,10 +26,15 @@ def get_paper_detail(paper_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="paper not found")
 
     # ✅ Paper 엔티티 필드명이 프로젝트마다 달라서 getattr로 안전하게 처리
+    arxiv_id = getattr(paper, "arxiv_id", None)
+    web_url = getattr(paper, "web_url", None) or getattr(paper, "url", None)
+    if web_url is None and arxiv_id:
+        web_url = f"https://arxiv.org/abs/{arxiv_id}"
+
     return PaperDetailOut(
         paper_id=paper.id,
         title=getattr(paper, "title", ""),
         abstract=getattr(paper, "abstract", None),
-        web_url=getattr(paper, "web_url", None) or getattr(paper, "url", None),
+        web_url=web_url,
         pdf_url=getattr(paper, "pdf_url", None),
     )

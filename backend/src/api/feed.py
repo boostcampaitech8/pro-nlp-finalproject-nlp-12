@@ -1,33 +1,42 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from src.database.mysql import get_db
 from src.schemas.feed import FeedResponse, FeedItem
 from src.service.recsys_service import RecSysService
+from src.service.smart_recommend_service import SmartRecommendService
 
 router = APIRouter(prefix="/feed", tags=["feed"])
+
 
 @router.get("", response_model=FeedResponse)
 def get_feed(
     user_id: str,
     limit: int = 20,
     cursor: str | None = None,
-    # 일단 살려: /feed?user_id=u1&k=5 도 계속 되게 test user
+    # /feed?user_id=u1&k=5 테스트용
     k: int | None = None,
+    mode: str = Query("quick", pattern="^(quick|smart|fast)$"),
     db: Session = Depends(get_db),
 ):
     if k is not None:
         limit = k
 
-    svc = RecSysService(db)
-
-    items, next_cursor, has_more = svc.recommend_page(
-        user_id=user_id,
-        limit=limit,
-        cursor=cursor,
-        candidate_k=max(200, limit * 50),
-        seen_limit=3000,
-    )
+    if mode == "smart":
+        smart = SmartRecommendService(db)
+        out = smart.recommend(user_id=user_id, k=limit)
+        items = out.get("items", [])
+        next_cursor = None
+        has_more = False
+    else:
+        svc = RecSysService(db)
+        items, next_cursor, has_more = svc.recommend_page(
+            user_id=user_id,
+            limit=limit,
+            cursor=cursor,
+            candidate_k=max(200, limit * 50),
+            seen_limit=3000,
+        )
 
     return FeedResponse(
         user_id=user_id,
