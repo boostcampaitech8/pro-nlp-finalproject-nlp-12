@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-import src.entity
 from src.api import search, summary
 from src.entity.base import init_db
+from src.client.faiss_store import get_faiss_store
 from src.service.paper_service import PaperService
-from src.service.faiss_service import faiss_service
+
 from src.repository.paper_repository import PaperRepository
 import uvicorn
 
@@ -14,12 +14,15 @@ async def lifespan(app: FastAPI):
     # DB 초기화
     init_db()
 
-    # 무거운 작업 처리
+    # 논문 가져오기
     all_papers = PaperRepository.get_papers_as_documents()
-    faiss_service.update_papers(all_papers)
+
+    # Faiss 인스턴스 생성 및 신규 논문 업데이트
+    faiss_store = get_faiss_store(dim=1024, index_path="./data/faiss_index.bin")
+    faiss_store.update_papers(all_papers)
 
     # app.state에 서비스 인스턴스 저장(어디서든 꺼내 쓸 수 있음)
-    app.state.paper_service = PaperService(faiss_service, all_papers)
+    app.state.paper_service = PaperService(faiss_store, all_papers)
 
     yield
 

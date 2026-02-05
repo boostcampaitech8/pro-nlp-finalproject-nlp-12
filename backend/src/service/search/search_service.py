@@ -18,11 +18,11 @@ class SearchService:
         """
         self.faiss_service = faiss_service
         self.docs = docs
+        self.doc_map = {int(d.metadata["paper_id"]): d for d in self.docs}
 
         try:
             self.stop_words = set(stopwords.words('english'))
         except LookupError:
-            print("NLTK stopwords downloading...")
             nltk.download('stopwords')
             self.stop_words = set(stopwords.words('english'))
 
@@ -89,17 +89,30 @@ class SearchService:
         의미 기반 검색기 반환
         """
         def search_faiss(query: str):
-            results = self.faiss_service.search(query, k=60)
-            print(results[0])
-            return [
-                Document(
-                    page_content=f"Title: {res.get("title")}\nAbstract: {res.get("abstract")}",
+            # [수정] faiss_store에 맞춰 수정
+            scores, ids = self.faiss_service.search_by_query_str(query, k=60)
+
+            dense_docs = []
+
+            for score, id in zip(scores, ids):
+                if id == -1:
+                    continue
+
+                # paper_id로 원본 Document 추출
+                original_doc = self.doc_map.get(int(id))
+
+                # 기존 Document 정보를 복사해서 새로운 Document 생성
+                new_doc = Document(
+                    page_content=original_doc.page_content,
                     metadata={
-                        **res,  # 기존의 모든 메타데이터(paper_id, summary 등)를 한 번에 주입
-                        "score": res.get("score")
+                        **original_doc.metadata,
+                        "score": float(score)
                     }
-                ) for res in results
-            ]
+                )
+
+                dense_docs.append(new_doc)
+
+            return dense_docs
         
         return RunnableLambda(search_faiss)
 
@@ -112,12 +125,10 @@ class SearchService:
 
         # [검증 함수] BM25로 들어가는 데이터 확인
         def check_sparse_input(query):
-            print(f"\n✅ [검증] BM25(Sparse) 실행 -> 입력값: '{query}' (번역)")
             return query
 
         # [검증 함수] Dense로 들어가는 데이터 확인
         def check_dense_input(query):
-            print(f"✅ [검증] Granite(Dense) 실행 -> 입력값: '{query}' (원본)")
             return query
 
         # 1. 두 검색기를 병렬로 실행하여 각각 결과를 가져오게 설정
@@ -157,7 +168,7 @@ class SearchService:
                 doc_scores.values(), 
                 key=lambda x: x["score"], 
                 reverse=True
-            )[:30] # Top-30
+            )[:20] # Top-20
             
             # (4) 메타데이터에 정보 주입 후 문서 리스트 반환
             recommend_docs = []
