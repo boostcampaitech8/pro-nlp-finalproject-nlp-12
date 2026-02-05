@@ -265,38 +265,7 @@ export default function ShortFormSection({
         overflow: "hidden",
       }}
     >
-      <div
-        aria-hidden
-        style={{
-          position: "fixed",
-          inset: 0,
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            width: 520,
-            height: 520,
-            left: "-10%",
-            top: "-15%",
-            background: "radial-gradient(circle, rgba(255, 107, 0, 0.22), transparent 65%)",
-            filter: "blur(4px)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            width: 620,
-            height: 620,
-            right: "-15%",
-            bottom: "-20%",
-            background: "radial-gradient(circle, rgba(0, 194, 168, 0.2), transparent 68%)",
-            filter: "blur(6px)",
-          }}
-        />
-      </div>
+      
       {toast && (
         <div
           style={{
@@ -343,7 +312,7 @@ export default function ShortFormSection({
 
       <div
         style={{
-          width: "min(980px, 100%)",
+          width: "min(960px, 100%)",
           display: "grid",
           gridTemplateColumns: "1fr 96px",
           gap: 20,
@@ -362,7 +331,7 @@ export default function ShortFormSection({
             border: "1px solid rgba(17, 18, 24, 0.08)",
             borderRadius: 22,
             overflow: "hidden",
-            boxShadow: "0 18px 50px rgba(17, 18, 24, 0.18)",
+            boxShadow: "0 18px 70px rgba(17, 18, 24, 0.14)",
             background: "rgba(255, 255, 255, 0.9)",
             color: "#111218",
             opacity: 1,
@@ -373,21 +342,22 @@ export default function ShortFormSection({
             flexDirection: "column",
           }}
         >
-          <div style={{ padding: 20, borderBottom: "1px solid rgba(17, 18, 24, 0.08)" }}>
+          <div style={{ padding: 24, borderBottom: "1px solid rgba(17, 18, 24, 0.08)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
-              <div style={{ fontWeight: 700, fontSize: 22, lineHeight: 1.2, letterSpacing: "-0.02em" }}>
+              <div style={{ fontWeight: 700, fontSize: 22, lineHeight: 1.25, letterSpacing: "-0.02em" }}>
                 {cur.title}
               </div>
             </div>
 
-            <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap", fontSize: 12, color: "#3a3d4a" }}>
+            <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap", fontSize: 12, color: "#475569" }}>
               {cur.primary_category && (
                 <span
                   style={{
                     padding: "4px 8px",
                     borderRadius: 999,
-                    background: "rgba(17, 18, 24, 0.06)",
-                    border: "1px solid rgba(17, 18, 24, 0.08)",
+                    background: "rgba(37, 99, 235, 0.12)",
+                    border: "1px solid rgba(37, 99, 235, 0.35)",
+                    color: "#1e3a8a",
                   }}
                 >
                   • {cur.primary_category}
@@ -398,9 +368,9 @@ export default function ShortFormSection({
                   style={{
                     padding: "4px 8px",
                     borderRadius: 999,
-                    background: "rgba(0, 194, 168, 0.12)",
-                    border: "1px solid rgba(0, 194, 168, 0.35)",
-                    color: "#0b4f45",
+                    background: "rgba(71, 85, 105, 0.12)",
+                    border: "1px solid rgba(71, 85, 105, 0.3)",
+                    color: "#334155",
                   }}
                 >
                   • {cur.published_at.slice(0, 10)}
@@ -412,12 +382,12 @@ export default function ShortFormSection({
             {libErr && <div style={{ marginTop: 8, fontSize: 12, color: "crimson" }}>{libErr}</div>}
           </div>
 
-          <div style={{ padding: 20, flex: 1, display: "flex" }}>
+          <div style={{ padding: 24, flex: 1, display: "flex" }}>
             <div
               style={{
                 fontSize: 14,
-                lineHeight: 1.65,
-                opacity: 0.9,
+                lineHeight: 1.75,
+                opacity: 0.92,
                 display: "-webkit-box",
                 WebkitLineClamp: 10,
                 WebkitBoxOrient: "vertical",
@@ -425,8 +395,12 @@ export default function ShortFormSection({
                 background: "rgba(17, 18, 24, 0.04)",
                 border: "1px solid rgba(17, 18, 24, 0.06)",
                 borderRadius: 16,
-                padding: 14,
+                padding: 18,
                 width: "100%",
+                maxWidth: 760,
+                margin: "0 auto",
+                alignSelf: "stretch",
+                maskImage: "linear-gradient(180deg, #000 0%, #000 85%, rgba(0,0,0,0) 100%)",
               }}
             >
               {cur.abstract}
@@ -435,7 +409,7 @@ export default function ShortFormSection({
 
           <div
             style={{
-              padding: 18,
+              padding: "18px 20px 22px",
               borderTop: "1px solid rgba(17, 18, 24, 0.08)",
               display: "flex",
               justifyContent: "space-between",
@@ -452,7 +426,7 @@ export default function ShortFormSection({
                 style={{
                   padding: "10px 14px",
                   borderRadius: 999,
-                  border: "1px solid rgba(255, 107, 0, 0.4)",
+                  border: "1px solid rgba(17, 18, 24, 0.16)",
                   opacity: likeDisabled ? 0.6 : 1,
                   fontWeight: 800,
                   cursor: likeDisabled ? "not-allowed" : "pointer",
@@ -485,11 +459,11 @@ export default function ShortFormSection({
                 style={{
                   padding: "10px 14px",
                   borderRadius: 999,
-                  border: "1px solid rgba(17, 18, 24, 0.1)",
+                  border: "1px solid rgba(17, 18, 24, 0.12)",
                   fontWeight: 900,
                   cursor: "pointer",
-                  background: "linear-gradient(135deg, #ff6b00 0%, #ff2d55 100%)",
-                  color: "white",
+                  background: "#ffffff",
+                  color: "#111218",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",

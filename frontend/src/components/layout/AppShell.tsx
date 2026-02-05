@@ -14,7 +14,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         display: "flex",
         flexDirection: "column",
         background:
-          "radial-gradient(1000px 520px at 15% 0%, rgba(255, 107, 0, 0.08), transparent 60%)",
+          "radial-gradient(900px 520px at 90% 10%, rgba(79, 124, 255, 0.08), transparent 55%)",
       }}
     >
       <main style={{ flex: 1, display: "flex", flexDirection: "column" }}>{children}</main>

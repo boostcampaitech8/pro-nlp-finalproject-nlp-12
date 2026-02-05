@@ -44,9 +44,9 @@ export default function BottomNav() {
               opacity: active ? 1 : 0.65,
               textTransform: "capitalize",
               color: active ? "#111218" : "#3a3d4a",
-              borderRadius: 14,
-              background: active ? "rgba(255, 107, 0, 0.12)" : "transparent",
-              border: active ? "1px solid rgba(255, 107, 0, 0.35)" : "1px solid transparent",
+              borderRadius: 0,
+              background: "transparent",
+              borderBottom: active ? "2px solid #ff6b00" : "2px solid transparent",
               transition: "all 0.2s ease",
             }}
           >

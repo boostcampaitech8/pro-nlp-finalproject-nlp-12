@@ -7,6 +7,10 @@
   --accent: #ff6b00;
   --accent-2: #00c2a8;
   --accent-3: #ff2d55;
+  --info-blue: #2563eb;
+  --calm-blue: #4f7cff;
+  --slate: #475569;
+  --ink-muted: #5f6673;
   --surface: #ffffff;
   --surface-muted: #f0f2f7;
   --ink-soft: #3a3d4a;
@@ -27,10 +31,7 @@
 }
 
 body {
-  background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(255, 107, 0, 0.15), transparent 60%),
-    radial-gradient(900px 500px at 90% 10%, rgba(0, 194, 168, 0.18), transparent 55%),
-    linear-gradient(180deg, #f7f8fc 0%, #f1f3f9 60%, #edf0f7 100%);
+  background: #fbfcff;
   color: var(--foreground);
   font-family: "Space Grotesk", "Montserrat", "Segoe UI", sans-serif;
   min-height: 100dvh;
