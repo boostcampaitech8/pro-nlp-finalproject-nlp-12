@@ -23,7 +23,7 @@ class PaperRepository:
                 Summary, Paper.id==Summary.paper_id
             ).filter(
                 Summary.summary_type==SummaryType.keypoint
-            ).limit(10).all()
+            ).all()
 
             docs = []
             for p, keypoint_text in results:

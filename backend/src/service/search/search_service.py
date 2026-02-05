@@ -157,7 +157,7 @@ class SearchService:
                 doc_scores.values(), 
                 key=lambda x: x["score"], 
                 reverse=True
-            )[:20] # Top-20
+            )[:30] # Top-30
             
             # (4) 메타데이터에 정보 주입 후 문서 리스트 반환
             recommend_docs = []
