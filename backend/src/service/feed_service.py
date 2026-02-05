@@ -213,7 +213,8 @@ class FeedService:
         w_sum = 0.0
 
         for e in evs:
-            w = float(e.weight or 0.0)
+            # event_type별 가중치 (e.event_type.value = "like", "bookmark", etc.)
+            w = EVENT_WEIGHTS.get(e.event_type.value, 0.0)
             if w <= 0:
                 continue
 

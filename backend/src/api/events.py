@@ -8,19 +8,11 @@ from src.schemas.event import EventCreate, EventResponse
 from src.repository.event_repository import EventRepository
 from src.repository.user_repository import UserRepository
 from src.entity.user import User
+from src.entity.user_event import EventType
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/events", tags=["events"])
-
-# 이벤트 가중치
-EVENT_WEIGHTS = {
-    "bookmark": 2.0,
-    "like": 1.0,
-    "click": 0.3,
-    "impression": 0.0,
-    "dislike": -2.0,
-}
 
 
 def get_or_create_user(db: Session, user_uuid: str) -> User:
@@ -63,12 +55,12 @@ def create_event(
 
         # user_uuid로 User 조회/생성
         user = get_or_create_user(db, payload.user_id)
-        weight = EVENT_WEIGHTS.get(payload.event_type, payload.weight)
+        event_type_enum = EventType(payload.event_type)
 
         # like/bookmark는 토글
         if payload.event_type in ("like", "bookmark"):
-            if event_repo.exists_event(user.id, payload.paper_id, payload.event_type):
-                event_repo.delete_event(user.id, payload.paper_id, payload.event_type)
+            if event_repo.exists_event(user.id, payload.paper_id, event_type_enum):
+                event_repo.delete_event(user.id, payload.paper_id, event_type_enum)
 
                 # dirty flag 설정
                 user_repo.mark_vector_dirty(payload.user_id)
@@ -84,11 +76,10 @@ def create_event(
                 )
 
             # 새로 생성
-            event = event_repo.create_event(
+            event = event_repo.add_event(
                 user_id=user.id,
                 paper_id=payload.paper_id,
-                event_type=payload.event_type,
-                weight=weight,
+                event_type=event_type_enum,
             )
 
             # dirty flag 설정
@@ -104,9 +95,9 @@ def create_event(
                 toggled_off=False,
             )
 
-        # impression/dislike는 중복 체크 후 기록
-        if payload.event_type in ("impression", "dislike"):
-            if event_repo.exists_event(user.id, payload.paper_id, payload.event_type):
+        # impression은 중복 체크 후 기록
+        if payload.event_type == "impression":
+            if event_repo.exists_event(user.id, payload.paper_id, event_type_enum):
                 return EventResponse(
                     ok=True,
                     event_id=None,
@@ -116,11 +107,10 @@ def create_event(
                     toggled_off=False,
                 )
 
-            event = event_repo.create_event(
+            event = event_repo.add_event(
                 user_id=user.id,
                 paper_id=payload.paper_id,
-                event_type=payload.event_type,
-                weight=weight,
+                event_type=event_type_enum,
             )
             db.commit()
             return EventResponse(
@@ -132,7 +122,7 @@ def create_event(
                 toggled_off=False,
             )
 
-        # click은 upsert (count 증가)
+        # click은 upsert
         if payload.event_type == "click":
             event = event_repo.upsert_click(user.id, payload.paper_id)
 
@@ -147,15 +137,13 @@ def create_event(
                 paper_id=payload.paper_id,
                 event_type=payload.event_type,
                 toggled_off=False,
-                click_count=event.click_count,
             )
 
         # 기타 이벤트
-        event = event_repo.create_event(
+        event = event_repo.add_event(
             user_id=user.id,
             paper_id=payload.paper_id,
-            event_type=payload.event_type,
-            weight=weight,
+            event_type=event_type_enum,
         )
         db.commit()
         return EventResponse(
@@ -191,9 +179,12 @@ def get_user_events(
         event_repo = EventRepository(db)
         user = get_or_create_user(db, user_id)
 
-        events = event_repo.get_user_events(
+        # event_type 문자열을 EventType enum으로 변환
+        event_type_enum = EventType(event_type) if event_type else None
+
+        events = event_repo.get_by_user(
             user_id=user.id,
-            event_type=event_type,
+            event_type=event_type_enum,
             limit=limit
         )
 
@@ -204,9 +195,7 @@ def get_user_events(
                 {
                     "event_id": e.id,
                     "paper_id": e.paper_id,
-                    "event_type": e.event_type,
-                    "weight": e.weight,
-                    "click_count": e.click_count,
+                    "event_type": e.event_type.value,
                     "created_at": e.created_at.isoformat() if e.created_at else None,
                 }
                 for e in events

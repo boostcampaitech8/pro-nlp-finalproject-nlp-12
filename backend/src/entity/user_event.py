@@ -13,7 +13,8 @@ if TYPE_CHECKING:
 class EventType(enum.Enum):
     like = "like"          # 좋아요
     bookmark = "bookmark"  # 북마크
-    click = "click"  # 자세히 보기 클릭
+    click = "click"        # 자세히 보기 클릭
+    impression = "impression"  # 노출 (seen)
 
 class UserEvent(Base):
     """
@@ -39,7 +40,7 @@ class UserEvent(Base):
         nullable=False
     )
     event_type: Mapped[EventType] = mapped_column(
-        Enum(EventType),
+        Enum(EventType, native_enum=False),
         nullable=False
     )
 

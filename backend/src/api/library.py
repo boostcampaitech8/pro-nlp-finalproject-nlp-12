@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from src.database.mysql import get_db
 from src.schemas.library import LibraryResponse, LibraryItem
 from src.repository.library_repository import LibraryRepository
+from src.repository.user_repository import UserRepository
 
 router = APIRouter(prefix="/api/me", tags=["me"])
 
@@ -26,9 +27,22 @@ def get_my_library(
     - limit: 반환할 논문 수
     - offset: 시작 위치
     """
+    # UUID → 내부 ID 변환
+    user_repo = UserRepository(db)
+    user = user_repo.get_by_uuid(user_id)
+    if not user:
+        return LibraryResponse(
+            user_id=user_id,
+            type=type,
+            limit=limit,
+            offset=offset,
+            total=0,
+            items=[],
+        )
+
     repo = LibraryRepository(db)
     total, items = repo.list_library(
-        user_id=user_id,
+        user_id=user.id,
         event_type=type,
         limit=limit,
         offset=offset,

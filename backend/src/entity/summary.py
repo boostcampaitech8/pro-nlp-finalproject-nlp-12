@@ -39,7 +39,7 @@ class Summary(Base):
         nullable=False
     )
     summary_type: Mapped[SummaryType] = mapped_column(
-        Enum(SummaryType),
+        Enum(SummaryType, native_enum=False),
         nullable=False
     )
 

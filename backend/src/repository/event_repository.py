@@ -67,10 +67,11 @@ class EventRepository(BaseRepository[UserEvent]):
         return self.db.execute(stmt).scalars().all()
 
     def get_recent_positive_events(self, user_id: int, limit: int = 100) -> List[UserEvent]:
-        """최근 긍정 이벤트 조회 (weight > 0)"""
+        """최근 긍정 이벤트 조회 (like, bookmark, click)"""
+        positive_types = [EventType.like, EventType.bookmark, EventType.click]
         stmt = (
             select(UserEvent)
-            .where(UserEvent.user_id == user_id, UserEvent.weight > 0)
+            .where(UserEvent.user_id == user_id, UserEvent.event_type.in_(positive_types))
             .order_by(desc(UserEvent.created_at))
             .limit(limit)
         )
@@ -121,14 +122,12 @@ class EventRepository(BaseRepository[UserEvent]):
         user_id: int,
         paper_id: int,
         event_type: EventType,
-        weight: float = 1.0
     ) -> UserEvent:
         """이벤트 추가"""
         event = UserEvent(
             user_id=user_id,
             paper_id=paper_id,
             event_type=event_type,
-            weight=weight,
         )
         self.db.add(event)
         return event
@@ -151,17 +150,16 @@ class EventRepository(BaseRepository[UserEvent]):
         user_id: int,
         paper_id: int,
         event_type: EventType,
-        weight: float = 1.0
     ) -> bool:
         """이벤트 토글 (있으면 삭제, 없으면 추가). 반환: 활성 여부"""
         if self.exists_event(user_id, paper_id, event_type):
             self.delete_event(user_id, paper_id, event_type)
             return False
-        self.add_event(user_id, paper_id, event_type, weight)
+        self.add_event(user_id, paper_id, event_type)
         return True
 
     def upsert_click(self, user_id: int, paper_id: int) -> UserEvent:
-        """클릭 이벤트 upsert (있으면 count+1, 없으면 생성)"""
+        """클릭 이벤트 upsert (있으면 시간 갱신, 없으면 생성)"""
         stmt = select(UserEvent).where(
             and_(
                 UserEvent.user_id == user_id,
@@ -172,15 +170,12 @@ class EventRepository(BaseRepository[UserEvent]):
         event = self.db.execute(stmt).scalar_one_or_none()
 
         if event:
-            event.click_count = (event.click_count or 1) + 1
             event.created_at = datetime.utcnow()
         else:
             event = UserEvent(
                 user_id=user_id,
                 paper_id=paper_id,
                 event_type=EventType.click,
-                click_count=1,
-                weight=1.0,
             )
             self.db.add(event)
 
