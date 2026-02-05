@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends, Request
 from src.service.paper_service import PaperService
-from src.schemas.search_schema import SearchResponse
-from src.schemas.summary_schema import SummaryRequest, SummaryResponse
+from backend.src.schemas.summary import SummaryRequest, SummaryResponse
 from typing import List
 
 router = APIRouter(
-    prefix="/api/summary",
+    prefix="/summary",
     tags=["Summary"]
 )
 

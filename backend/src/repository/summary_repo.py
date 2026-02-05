@@ -1,6 +1,5 @@
 from src.database.mysql import get_mysql_db
 from src.entity.summary import Summary, SummaryType
-from src.entity.paper import Paper
 from typing import List, Dict
 
 class SummaryRepository:

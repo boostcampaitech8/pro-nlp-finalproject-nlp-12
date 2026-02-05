@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, Request
 from src.service.paper_service import PaperService
-from src.schemas.search_schema import SearchResponse
+from backend.src.schemas.search import SearchRequest, SearchResponse
 from typing import List
 
 router = APIRouter(
-    prefix="/api/search",
+    prefix="/search",
     tags=["Search"]
 )
 
@@ -14,10 +14,10 @@ def get_paper_service(request: Request) -> PaperService:
 
 @router.get("/", response_model=List[SearchResponse])
 async def get_papers(
-    query: str,
+    request: SearchRequest,
     service: PaperService = Depends(get_paper_service)    
 ):
     """
     논문 검색 결과를 반환합니다.
     """
-    return await service.hybrid_search(query)
+    return await service.hybrid_search(request.user_id, request.query)

@@ -8,6 +8,7 @@ class PaperSummary(BaseModel):
     methodology: str = Field(description="주요 방법론")
     performance: str = Field(description="실험 및 성과")
     significance: str = Field(description="의의 및 향후 영향력")
+    keypoint: str = Field(description="핵심 요약")
 
 class SummarizeService:
     """
