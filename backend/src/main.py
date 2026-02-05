@@ -4,7 +4,8 @@ from contextlib import asynccontextmanager
 from src.api import search, summary, admin, events, feed, library, users
 from src.client.faiss_store import get_faiss_store
 from src.service.paper_service import PaperService
-from src.repository.paper_repository import PaperRepository
+from src.repository.paper_repo import PaperRepository
+from src.entity.base import init_db
 import uvicorn
 
 @asynccontextmanager
@@ -34,6 +35,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
+        "http://127.0.0.1:3000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
