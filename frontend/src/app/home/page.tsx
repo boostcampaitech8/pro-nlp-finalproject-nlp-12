@@ -18,7 +18,10 @@ export default function HomePage() {
     const uid = getUserId();
     if (!uid) return;
 
+    const t0 = performance.now();
     const out = await getFeed(uid, 20, cursor, m === "smart" ? "smart" : "fast");
+    const t1 = performance.now();
+    console.log(`[feed] mode=${m} loaded in ${Math.round(t1 - t0)}ms`);
 
     setItems((prev) => (cursor ? [...prev, ...(out.items ?? [])] : out.items ?? []));
     setNextCursor(out.next_cursor ?? null);

@@ -25,7 +25,10 @@ export default function MyPage() {
     (async () => {
       try {
         const out = await getLibrary(uid, "all");
-        setItems(out.items ?? []);
+        const safe = (out.items ?? []).filter(
+          (it): it is LibraryItem => it.event_type === "like" || it.event_type === "bookmark"
+        );
+        setItems(safe);
       } catch (e: any) {
         setErr(String(e?.message ?? e));
       }

@@ -80,7 +80,7 @@ export async function getLibrary(user_id: string, type: "all" | "like" | "bookma
     total: number;
     items: Array<{
       paper_id: number;
-      event_type: string;
+      event_type: "like" | "bookmark";
       title: string;
       abstract: string;
     }>;
