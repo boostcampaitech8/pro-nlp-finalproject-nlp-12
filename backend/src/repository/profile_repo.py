@@ -73,6 +73,13 @@ class ProfileRepository:
             return False
         return prof.vector_dirty_at is not None
 
+    def clear_vector_dirty(self, user_id: str) -> None:
+        prof = self.get(user_id)
+        if prof is None:
+            return
+        prof.vector_dirty_at = None
+        self.db.commit()
+
     # 온보딩 저장 + 완료 처리
     def set_onboarding(self, user_id: str, answers: dict) -> User:
         prof = self.ensure_profile(user_id)

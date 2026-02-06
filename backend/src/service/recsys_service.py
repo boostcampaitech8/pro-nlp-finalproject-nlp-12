@@ -62,7 +62,7 @@ class RecSysService:
             user_id=user_id,
             profile_repo=self.profile_repo,
             event_repo=self.event_repo,
-            faiss_store=self.faiss,
+            paper_repo=self.paper_repo,
         )
 
         prof = self.profile_repo.get(user_id)

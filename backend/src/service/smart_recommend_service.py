@@ -20,6 +20,7 @@ from src.repository.paper_repo import PaperRepository
 from src.repository.profile_repo import ProfileRepository
 from src.repository.event_repo import EventRepository
 from src.service.recsys.vector_utils import parse_vector_json
+from src.service.recsys.user_vector import maybe_refresh_user_vector
 from src.client.faiss_store import get_faiss_store
 
 logger = logging.getLogger(__name__)
@@ -148,6 +149,13 @@ class SmartRecommendService:
     ) -> dict:
         total_start = time.time()
         timings: dict[str, float] = {}
+
+        maybe_refresh_user_vector(
+            user_id=user_id,
+            profile_repo=self.profile_repo,
+            event_repo=self.event_repo,
+            paper_repo=self.paper_repo,
+        )
 
         # profile load
         t0 = time.time()

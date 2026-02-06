@@ -6,6 +6,9 @@ from src.client.faiss_store import get_faiss_store
 from src.repository.paper_repo import PaperRepository
 from src.entity.base import init_db
 import uvicorn
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
