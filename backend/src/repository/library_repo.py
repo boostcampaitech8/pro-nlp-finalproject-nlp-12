@@ -1,10 +1,13 @@
 from datetime import date, datetime, time
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_
 
 from src.entity.paper import Paper
 from src.entity.user_event import UserEvent
 from src.entity.user import User
+from src.entity.summary import Summary, SummaryType
+from src.entity.primary_category import PrimaryCategory
+from src.entity.paper_category import PaperCategory
 
 
 def _to_datetime(dt: datetime | date | None) -> datetime | None:
@@ -45,17 +48,16 @@ def _paper_fields(p: Paper) -> dict:
     if cat_list:
         categories = ", ".join(cat_list)
 
-    authors = getattr(p, "authors", None) or ""
+    summary = getattr(p, "summary", None)
 
     return {
         "title": getattr(p, "title", None),
-        "abstract": getattr(p, "abstract", None),
-        "authors": authors,
         "abs_url": abs_url,
         "pdf_url": getattr(p, "pdf_url", None),
         "published_at": published_at,
         "primary_category": primary_category,
         "categories": categories,
+        "summary": summary
     }
 
 
@@ -103,7 +105,7 @@ class LibraryRepository:
 
         # 최신 이벤트 row만 join해서 가져오기
         base_q = (
-            self.db.query(UserEvent, Paper)
+            self.db.query(UserEvent, Paper, Summary.summary_text)
             .join(
                 latest_subq,
                 and_(
@@ -114,6 +116,14 @@ class LibraryRepository:
                 ),
             )
             .join(Paper, Paper.id == UserEvent.paper_id)
+            .options(
+                joinedload(Paper.primary_category).joinedload(PrimaryCategory.category),
+                joinedload(Paper.paper_categories).joinedload(PaperCategory.category)
+            )
+            .outerjoin(
+                Summary,
+                and_(Paper.id==Summary.paper_id, Summary.summary_type==SummaryType.keypoint.value)
+            )
             .order_by(UserEvent.created_at.desc())
         )
 
@@ -121,7 +131,8 @@ class LibraryRepository:
         rows = base_q.offset(offset).limit(limit).all()
 
         items = []
-        for ev, p in rows:
+        for ev, p, summary in rows:
+            setattr(p, "summary", summary)
             fields = _paper_fields(p)
             items.append(
                 {
