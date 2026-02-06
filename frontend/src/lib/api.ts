@@ -20,16 +20,16 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
 
 export type FeedItem = {
   paper_id: number;
+  arxiv_id?: string | null;
   title: string;
   abstract: string;
-  score?: number;
-  arxiv_id?: string | null;
   authors?: any;
   primary_category?: string | null;
   categories?: any;
-  published_at?: string | null;
-  abs_url?: string | null;
+  published_date?: string | null;
   pdf_url?: string | null;
+  abs_url?: string | null;
+  summary?: string;
 
   is_liked?: boolean;
   is_bookmarked?: boolean;
@@ -51,23 +51,17 @@ export async function getFeed(user_id: string, k = 20, cursor?: string | null, m
 /**
  * TODO : search 피드
  */
-export async function searchFeed(user_id: string, q: string, k = 20, cursor?: string | null) {
-  const c = cursor ? `&cursor=${encodeURIComponent(cursor)}` : "";
-  return http<{
-    user_id: string;
-    q: string;
-    k?: number | null;
-    limit: number;
-    items: FeedItem[];
-    next_cursor?: string | null;
-    has_more?: boolean;
-  }>(`/search?user_id=${encodeURIComponent(user_id)}&q=${encodeURIComponent(q)}&k=${k}${c}`);
+export async function searchFeed(user_id: string, query: string) {
+  return http<FeedItem[]>(`/search/`, {
+    method: "POST",
+    body: JSON.stringify({ user_id, query }),
+  });
 }
 
 export async function postEvent(input: {
   user_id: string;
   paper_id: number;
-  event_type: "impression" | "click" | "like" | "bookmark" | "dislike";
+  event_type:  "click" | "like" | "bookmark";
 }) {
   return http<{ ok: boolean; active: boolean }>(`/events`, {
     method: "POST",
@@ -85,4 +79,23 @@ export async function getLibrary(user_id: string, type: "all" | "like" | "bookma
       abstract: string;
     }>;
   }>(`/me/library?user_id=${encodeURIComponent(user_id)}&type=${type}&limit=100&offset=0`);
+}
+
+/*
+* 논문 요약 관련 스키마
+*/
+export type SummaryItem = {
+  paper_id: number;
+  summary_type: string;
+  summary_text: string;
+}
+
+/*
+* 클릭 이벤트 저장 및 논문 요약본 배열 반환
+*/
+export async function getPaperSummary(user_id: string, paper_id: number) {
+  return http<SummaryItem[]>(`/summary/`, {
+    method: "POST",
+    body: JSON.stringify({ user_id, paper_id })
+  })
 }

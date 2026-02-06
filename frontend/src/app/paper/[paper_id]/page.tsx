@@ -1,134 +1,61 @@
-// src/app/paper/[paper_id]/page.tsx
-import Link from "next/link";
+"use client";
 
-type PaperDetail = {
-  paper_id: number;
-  title: string;
-  abstract?: string | null;
-  web_url?: string | null;
-  pdf_url?: string | null;
-};
+import { useEffect, useState, use } from "react";
+import { getPaperSummary, SummaryItem } from "@/lib/api";
+import { getUserId } from "@/lib/user";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8000";
-
-async function getPaper(paperId: string): Promise<PaperDetail> {
-  const url = `${API_BASE}/api/paper/${paperId}`;
-  const res = await fetch(url, { cache: "no-store" });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Failed to fetch: ${url} | HTTP ${res.status} - ${text}`);
-  }
-  return res.json();
-}
-
-export default async function PaperDetailPage(props: {
+export default function PaperDetailPage(props: {
   params: Promise<{ paper_id: string }>;
   searchParams?: Promise<{ from?: string }>;
 }) {
-  const { paper_id } = await props.params;
-  const searchParams = props.searchParams ? await props.searchParams : undefined;
+  const params = use(props.params);
+  const searchParams = props.searchParams ? use(props.searchParams) : {};
+  const paper_id = params.paper_id;
+
+  const [summaries, setSummaries] = useState<SummaryItem[]>([]);
+  const [paperData, setPaperData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
   const backHref = searchParams?.from === "mypage" ? "/mypage" : "/home";
 
-  const data = await getPaper(paper_id);
-  const abstractText = (data.abstract || "").trim();
-  const chunks = abstractText
-    ? abstractText.split(/(?<=[.!?])\s+/).filter(Boolean)
-    : [];
-  const pick = (start: number, count: number) => chunks.slice(start, start + count).join(" ");
-  const motivationText = pick(0, 2) || "동기 요약을 준비 중입니다.";
-  const methodologyText = pick(2, 2) || "방법 요약을 준비 중입니다.";
-  const performanceText = pick(4, 2) || "성능 요약을 준비 중입니다.";
-  const significanceText = pick(6, 2) || "의의 요약을 준비 중입니다.";
+  useEffect(() => {
+    async function loadSummary() {
+      const uid = getUserId();
+      if (!uid) return;
+      try {
+        setLoading(true);
+
+        // [수정 필요] 요약본과 논문 상세 정보를 동시에 가져오기
+        const SummaryData = await getPaperSummary(uid, Number(paper_id));
+        setSummaries(SummaryData);
+      } catch (err) {
+        console.error("요약본 로드 실패:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadSummary();
+  }, [paper_id]);
+
+  // 특정 타입의 요약을 찾는 함수
+  const getSummary = (type: string) =>
+    summaries.find(s => s.summary_type.toLowerCase() === type.toLowerCase())?.summary_text;
 
   return (
     <div style={{ maxWidth: 980, margin: "0 auto", padding: "24px 16px 120px" }}>
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <Link href={backHref}>
-          <button
-            style={{
-              padding: "10px 14px",
-              borderRadius: 12,
-              border: "1px solid rgba(17, 18, 24, 0.12)",
-              background: "rgba(255,255,255,0.9)",
-              cursor: "pointer",
-              fontWeight: 800,
-              color: "#111218",
-              boxShadow: "0 8px 18px rgba(17, 18, 24, 0.08)",
-            }}
-          >
-            ← 뒤로
-          </button>
-        </Link>
-      </div>
-
-      <div
-        style={{
-          marginTop: 16,
-          borderRadius: 22,
-          padding: 22,
-          background: "rgba(255,255,255,0.92)",
-          border: "1px solid rgba(17, 18, 24, 0.08)",
-          boxShadow: "0 18px 50px rgba(17, 18, 24, 0.16)",
-          backdropFilter: "blur(12px)",
-          color: "#111218",
-        }}
-      >
-        <h1 style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.25, letterSpacing: "-0.02em" }}>
-          {data.title}
-        </h1>
-
-        <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
-          <div
-            style={{
-              padding: 16,
-              borderRadius: 16,
-              background: "rgba(255, 107, 0, 0.08)",
-              border: "1px solid rgba(255, 107, 0, 0.2)",
-            }}
-          >
-            <div style={{ fontWeight: 800, marginBottom: 6 }}>Motivation</div>
-            <div style={{ fontSize: 14, lineHeight: 1.7, color: "#2c2f3a" }}>{motivationText}</div>
-          </div>
-          <div
-            style={{
-              padding: 16,
-              borderRadius: 16,
-              background: "rgba(0, 194, 168, 0.08)",
-              border: "1px solid rgba(0, 194, 168, 0.2)",
-            }}
-          >
-            <div style={{ fontWeight: 800, marginBottom: 6 }}>Methodology</div>
-            <div style={{ fontSize: 14, lineHeight: 1.7, color: "#2c2f3a" }}>{methodologyText}</div>
-          </div>
-          <div
-            style={{
-              padding: 16,
-              borderRadius: 16,
-              background: "rgba(17, 18, 24, 0.04)",
-              border: "1px solid rgba(17, 18, 24, 0.08)",
-            }}
-          >
-            <div style={{ fontWeight: 800, marginBottom: 6 }}>Performance</div>
-            <div style={{ fontSize: 14, lineHeight: 1.7, color: "#2c2f3a" }}>{performanceText}</div>
-          </div>
-          <div
-            style={{
-              padding: 16,
-              borderRadius: 16,
-              background: "rgba(255, 45, 85, 0.08)",
-              border: "1px solid rgba(255, 45, 85, 0.2)",
-            }}
-          >
-            <div style={{ fontWeight: 800, marginBottom: 6 }}>Significance</div>
-            <div style={{ fontSize: 14, lineHeight: 1.7, color: "#2c2f3a" }}>{significanceText}</div>
-          </div>
+        <div style={{ marginTop: 20, display: "grid", gap: 16 }}>
+          <SummaryBox title="Motivation" text={getSummary("motivation")} color="rgba(255, 107, 0, 0.08)" borderColor="rgba(255, 107, 0, 0.2)" />
+          <SummaryBox title="Methodology" text={getSummary("methodology")} color="rgba(0, 194, 168, 0.08)" borderColor="rgba(0, 194, 168, 0.2)" />
+          <SummaryBox title="Performance" text={getSummary("performance")} color="rgba(17, 18, 24, 0.04)" borderColor="rgba(17, 18, 24, 0.08)" />
+          <SummaryBox title="Significance" text={getSummary("significance")} color="rgba(255, 45, 85, 0.08)" borderColor="rgba(255, 45, 85, 0.2)" />
         </div>
 
-        <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {data.web_url ? (
+        {/* <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {paperData.web_url ? (
             <a
-              href={data.web_url}
+              href={paperData.web_url}
               target="_blank"
               rel="noreferrer"
               style={{
@@ -144,9 +71,9 @@ export default async function PaperDetailPage(props: {
               웹 링크
             </a>
           ) : null}
-          {data.pdf_url ? (
+          {paperData.pdf_url ? (
             <a
-              href={data.pdf_url}
+              href={paperData.pdf_url}
               target="_blank"
               rel="noreferrer"
               style={{
@@ -162,7 +89,18 @@ export default async function PaperDetailPage(props: {
               PDF 링크
             </a>
           ) : null}
-        </div>
+        </div> */}
+      </div> 
+    </div>
+  );
+}
+
+function SummaryBox({ title, text, color, borderColor }: any) {
+  return (
+    <div style={{ padding: 20, borderRadius: 18, background: color, border: `1px solid ${borderColor}` }}>
+      <div style={{ fontWeight: 800, marginBottom: 8, fontSize: 16 }}>{title}</div>
+      <div style={{ fontSize: 15, lineHeight: 1.7, color: "#2c2f3a" }}>
+        {text || `${title} 섹션에 대한 상세 요약을 불러오는 중입니다.`}
       </div>
     </div>
   );

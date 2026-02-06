@@ -20,11 +20,14 @@ export default function SearchPage() {
     const uid = getUserId();
     if (!uid) return;
 
-    const out = await searchFeed(uid, q.trim(), 20, cursor);
+    const out = await searchFeed(uid, q.trim());
 
-    setItems((prev) => (cursor ? [...(prev ?? []), ...(out.items ?? [])] : out.items ?? []));
-    setNextCursor(out.next_cursor ?? null);
-    setHasMore(Boolean(out.has_more));
+    // out이 배열인지 확인하고 안전하게 할당
+    const newItems = Array.isArray(out) ? out: []
+
+    setItems((prev) => (cursor ? [...(prev ?? []), ...newItems]: newItems));
+    setNextCursor(null);
+    setHasMore(false);
   }, [q]);
 
   async function onSubmit(e: FormEvent) {
