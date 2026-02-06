@@ -58,7 +58,7 @@ export async function searchFeed(user_id: string, query: string) {
 export async function postEvent(input: {
   user_id: string;
   paper_id: number;
-  event_type:  "click" | "like" | "bookmark";
+  event_type:  "click" | "like" | "bookmark" | "impression";
 }) {
   return http<{ ok: boolean; active: boolean }>(`/events`, {
     method: "POST",

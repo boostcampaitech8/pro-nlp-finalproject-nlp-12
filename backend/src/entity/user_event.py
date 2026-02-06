@@ -11,9 +11,10 @@ if TYPE_CHECKING:
     from src.entity.user import User
 
 class EventType(enum.Enum):
-    like = "like"          # 좋아요
-    bookmark = "bookmark"  # 북마크
-    click = "click"        # 클릭
+    like = "like"              # 좋아요
+    bookmark = "bookmark"      # 북마크
+    click = "click"            # 클릭
+    impression = "impression"  # 제공 여부
 
 class UserEvent(Base):
     """

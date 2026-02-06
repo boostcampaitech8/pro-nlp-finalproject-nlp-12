@@ -78,17 +78,17 @@ export default function ShortFormSection({
     return () => ro.disconnect();
   }, [navBarHeight]);
 
-  // useEffect(() => {
-  //   if (!cur?.paper_id) return;
-  //   if (impressedRef.current.has(cur.paper_id)) return;
-  //   impressedRef.current.add(cur.paper_id);
+  useEffect(() => {
+    if (!cur?.paper_id) return;
+    if (impressedRef.current.has(cur.paper_id)) return;
+    impressedRef.current.add(cur.paper_id);
 
-  //   postEvent({
-  //     user_id: userId,
-  //     paper_id: cur.paper_id,
-  //     event_type: "impression",
-  //   }).catch(console.error);
-  // }, [cur?.paper_id, userId]);
+    postEvent({
+      user_id: userId,
+      paper_id: cur.paper_id,
+      event_type: "impression",
+    }).catch(console.error);
+  }, [cur?.paper_id, userId]);
 
   const goNext = useCallback(() => {
     if (!items?.length) return;
