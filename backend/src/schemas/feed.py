@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
+from datetime import date
 from typing import Optional, List
 
 class FeedItem(BaseModel):
@@ -16,6 +17,19 @@ class FeedItem(BaseModel):
     pdf_url: Optional[str] = None
 
     score: float
+
+    """
+    논문 추천 결과를 관리하는 스키마입니다.
+    """
+    paper_id: int
+    arxiv_id: str
+    title: str
+    pdf_url: HttpUrl
+    abs_url: HttpUrl
+    published_date: date
+    summary: str
+    is_liked: bool
+    is_bookmarked: bool
 
 class FeedResponse(BaseModel):
     user_id: str

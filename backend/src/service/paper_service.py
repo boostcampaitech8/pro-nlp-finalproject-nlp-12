@@ -21,6 +21,7 @@ class PaperService:
         self.summarize_service = SummarizeService(self.clova_client)
         self.paper_repository = PaperRepository(self.db)
         self.event_repository = EventRepository(self.db)
+        self.summary_repository = SummaryRepository(self.db)
 
     async def summarize_and_save(self, arxiv_id: str, pdf_url: str):
         """
@@ -40,7 +41,7 @@ class PaperService:
 
         paper_id = self.paper_repository.get_id_by_arxiv_id(arxiv_id)
 
-        SummaryRepository.save(paper_id, summary_infos)
+        self.summary_repository.save(paper_id, summary_infos)
 
     async def hybrid_search(self, user_id: str, query: str = "Attention mechanism의 효율성과 연산량 최적화 방법") -> List[SearchResponse]:
         """
@@ -53,11 +54,19 @@ class PaperService:
             paper_id = paper_id=doc.metadata.get("paper_id")
 
             # 좋아요, 북마크 여부
-            is_liked = self.event_repository.exists_event(user_id, paper_id, EventType.like.value)
-            is_bookmarked = self.event_repository.exists_event(user_id, paper_id, EventType.bookmark.value)
+            is_liked = self.event_repository.exists_event(
+                user_id=user_id,
+                paper_id=paper_id,
+                event_type=EventType.like.value
+            )
+            is_bookmarked = self.event_repository.exists_event(
+                user_id=user_id,
+                paper_id=paper_id,
+                event_type=EventType.bookmark.value
+            )
 
             pdf_url = doc.metadata.get("pdf_url")
-            abs_url = doc.metadata.get("abs_url")
+            abs_url = pdf_url.replace("pdf", "abs").removesuffix(".abs")
 
             search_results.append(
                 SearchResponse(
@@ -80,10 +89,14 @@ class PaperService:
         클릭 이벤트를 저장하고, keypoint를 제외한 요약을 반환합니다.
         """
         # 클릭 로그 저장
-        self.event_repository.create(user_id, paper_id, EventType.click.value)
+        self.event_repository.create(
+            user_id=user_id,
+            paper_id=paper_id,
+            event_type=EventType.click.value
+        )
 
         # 논문 요약 조회 및 반환
-        results = SummaryRepository.get_summaries_except_keypoint(paper_id)
+        results = self.summary_repository.get_summaries_except_keypoint(paper_id)
 
         return [
             SummaryResponse(
