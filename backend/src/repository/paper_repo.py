@@ -3,6 +3,7 @@ from sqlalchemy import select, desc
 from src.entity.paper import Paper
 from src.entity.summary import Summary, SummaryType
 from src.entity.primary_category import PrimaryCategory
+from src.entity.category import Category
 from src.entity.paper_category import PaperCategory
 from langchain_core.documents import Document
 
@@ -30,6 +31,32 @@ class PaperRepository:
         else:
             stmt = select(Paper).order_by(desc(getattr(Paper, "id"))).limit(limit)
         return self.db.execute(stmt).scalars().all()
+
+    def get_recent_papers_by_primary_category(self, category_type: str, limit: int = 50) -> list[Paper]:
+        stmt = (
+            select(Paper)
+            .join(PrimaryCategory, Paper.id == PrimaryCategory.paper_id)
+            .join(Category, Category.id == PrimaryCategory.category_id)
+            .where(Category.category_type == category_type)
+        )
+        if hasattr(Paper, "published_date"):
+            stmt = stmt.order_by(desc(getattr(Paper, "published_date")))
+        else:
+            stmt = stmt.order_by(desc(getattr(Paper, "id")))
+        return self.db.execute(stmt.limit(limit)).scalars().all()
+
+    def get_recent_papers_by_any_category(self, category_type: str, limit: int = 50) -> list[Paper]:
+        stmt = (
+            select(Paper)
+            .join(PaperCategory, Paper.id == PaperCategory.paper_id)
+            .join(Category, Category.id == PaperCategory.category_id)
+            .where(Category.category_type == category_type)
+        )
+        if hasattr(Paper, "published_date"):
+            stmt = stmt.order_by(desc(getattr(Paper, "published_date")))
+        else:
+            stmt = stmt.order_by(desc(getattr(Paper, "id")))
+        return self.db.execute(stmt.limit(limit)).scalars().all()
 
     def count_all(self) -> int:
         return self.db.query(Paper).count()

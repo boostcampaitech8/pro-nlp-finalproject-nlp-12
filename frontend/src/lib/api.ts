@@ -102,3 +102,13 @@ export async function getPaperSummary(user_id: string, paper_id: number) {
     body: JSON.stringify({ user_id, paper_id })
   })
 }
+
+export async function postOnboarding(input: { user_id: string; categories: string[] }) {
+  return http<{ user_id: string; has_onboarded: boolean }>(`/users/onboarding`, {
+    method: "POST",
+    body: JSON.stringify({
+      user_id: input.user_id,
+      answers: { categories: input.categories },
+    }),
+  });
+}

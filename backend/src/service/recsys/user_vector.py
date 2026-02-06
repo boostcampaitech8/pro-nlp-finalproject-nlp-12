@@ -1,7 +1,7 @@
 ﻿import json
 import logging
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Iterable
 
 import numpy as np
 
@@ -20,6 +20,8 @@ EVENT_WEIGHTS = {
 }
 
 VECTOR_DIRTY_COOLDOWN_SEC = 60  # dirty flag 60초 타이머
+ONBOARD_PRIMARY_WEIGHT = 1.0
+ONBOARD_SECONDARY_WEIGHT = 0.4
 
 
 def maybe_refresh_user_vector(*, user_id: str, profile_repo, event_repo, paper_repo, recent_limit: int = 120) -> None:
@@ -146,3 +148,95 @@ def maybe_refresh_user_vector(*, user_id: str, profile_repo, event_repo, paper_r
         skipped_missing_paper,
         skipped_empty,
     )
+
+
+def build_user_vector_from_categories(
+    *,
+    user_id: str,
+    categories: Iterable[str],
+    profile_repo,
+    paper_repo,
+    per_category_limit: int = 30,
+    primary_weight: float = ONBOARD_PRIMARY_WEIGHT,
+    secondary_weight: float = ONBOARD_SECONDARY_WEIGHT,
+) -> bool:
+    cats = [str(c).strip() for c in categories if str(c).strip()]
+    if not cats:
+        return False
+
+    papers_by_id: Dict[int, object] = {}
+    weights_by_id: Dict[int, float] = {}
+
+    def _add_papers(papers, w: float):
+        for p in papers:
+            pid = getattr(p, "id", None)
+            if pid is None:
+                continue
+            try:
+                pid_int = int(pid)
+            except Exception:
+                continue
+            if pid_int not in papers_by_id:
+                papers_by_id[pid_int] = p
+            weights_by_id[pid_int] = weights_by_id.get(pid_int, 0.0) + float(w)
+
+    for cat in cats:
+        try:
+            prim = paper_repo.get_recent_papers_by_primary_category(cat, limit=per_category_limit)
+        except Exception:
+            prim = []
+        _add_papers(prim, primary_weight)
+
+        try:
+            sec = paper_repo.get_recent_papers_by_any_category(cat, limit=per_category_limit)
+        except Exception:
+            sec = []
+        _add_papers(sec, secondary_weight)
+
+    if not papers_by_id:
+        logger.info("Onboarding vector skip: no papers for categories user_id=%s", user_id)
+        return False
+
+    ids: list[int] = []
+    texts: list[str] = []
+    for pid, p in papers_by_id.items():
+        title = getattr(p, "title", "") or ""
+        abstract = getattr(p, "abstract", "") or ""
+        texts.append(f"Title: {title}\n\nAbstract: {abstract}")
+        ids.append(pid)
+
+    try:
+        vecs = embed_texts(texts)
+    except Exception:
+        logger.exception("Onboarding vector embed failed user_id=%s", user_id)
+        return False
+
+    vec_sum = None
+    w_sum = 0.0
+    used = 0
+
+    for pid, vec in zip(ids, vecs):
+        w = weights_by_id.get(pid, 0.0)
+        if w <= 0:
+            continue
+        v = np.array(vec, dtype=float)
+        if v.size == 0:
+            continue
+
+        if vec_sum is None:
+            vec_sum = np.zeros_like(v)
+        if vec_sum.shape != v.shape:
+            return False
+
+        vec_sum += w * v
+        w_sum += w
+        used += 1
+
+    if vec_sum is None or w_sum <= 0:
+        logger.info("Onboarding vector skip: no usable vectors user_id=%s used=%d", user_id, used)
+        return False
+
+    user_vec = safe_l2_normalize(vec_sum / w_sum)
+    profile_repo.upsert(user_id, json.dumps(user_vec.tolist()))
+    logger.info("Onboarding vector saved user_id=%s used=%d", user_id, used)
+    return True
