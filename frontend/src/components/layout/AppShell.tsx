@@ -1,16 +1,15 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import BottomNav from "./BottomNav";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const hideNav = pathname?.startsWith("/onboarding");
+  const hideHeaderOffset = pathname?.startsWith("/onboarding");
 
   return (
     <div
       style={{
-        minHeight: "calc(100dvh - 56px)",
+        minHeight: hideHeaderOffset ? "100dvh" : "calc(100dvh - 64px)",
         display: "flex",
         flexDirection: "column",
         background:
@@ -18,7 +17,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       }}
     >
       <main style={{ flex: 1, display: "flex", flexDirection: "column" }}>{children}</main>
-      {!hideNav && <BottomNav />}
     </div>
   );
 }

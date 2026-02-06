@@ -13,7 +13,7 @@ type PendingKey = `${number}:${"like" | "bookmark"}`;
 export default function ShortFormSection({
   items,
   onNeedMore,
-  navBarHeight = 64,
+  navBarHeight = 0,
   durationMs = 10_000,
 }: {
   items: FeedItem[];
