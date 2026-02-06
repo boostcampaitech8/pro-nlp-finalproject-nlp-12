@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Optional, Tuple
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, and_
 
 from src.service.recsys.cursor import decode_cursor, encode_cursor
+from src.entity.summary import SummaryType
 
 
 def recommend_page(
@@ -14,6 +15,7 @@ def recommend_page(
     event_repo,
     profile_repo,
     paper_model,
+    summary_model,
     faiss_store,
     candidate_k: Optional[int] = None,
     pool_k: int = 80,
@@ -62,7 +64,7 @@ def recommend_page(
         page_scores.append(sc)
 
     # DB 로드
-    papers = _load_papers_by_ids(db=db, paper_model=paper_model, ids=page_ids)
+    papers = _load_papers_by_ids(db=db, paper_model=paper_model, summary_model=summary_model, ids=page_ids)
 
     # order 유지
     paper_map = {int(getattr(p, "id")): p for p in papers if getattr(p, "id", None) is not None}
@@ -146,7 +148,21 @@ def fallback_page(
             if pid_int in seen_ids:
                 continue
 
-            items.append(_paper_to_item(p, score=0.0))
+            it = _paper_to_item(p, score=0.0)
+
+            # 좋아요/북마크 상태
+            try:
+                it["is_liked"] = event_repo.exists_event(user_id=user_id, paper_id=int(pid_int), event_type="like")
+            except Exception:
+                it["is_liked"] = False
+
+            try:
+                it["is_bookmarked"] = event_repo.exists_event(user_id=user_id, paper_id=int(pid_int), event_type="bookmark")
+            except Exception:
+                it["is_bookmarked"] = False
+
+            items.append(it)
+
             if len(items) >= limit:
                 break
 
@@ -159,11 +175,34 @@ def fallback_page(
     return items, next_cursor, has_more
 
 
-def _load_papers_by_ids(*, db, paper_model, ids: List[int]):
+# [추가] Params: +summary_model
+def _load_papers_by_ids(*, db, paper_model, summary_model, ids: List[int]):
     if not ids:
         return []
-    stmt = select(paper_model).where(getattr(paper_model, "id").in_(ids))
-    papers = db.execute(stmt).scalars().all()
+    
+    # [수정] summary_text(keypoint)도 가져오게끔 수정
+    stmt = (
+        select(paper_model, summary_model.summary_text)
+        .outerjoin(
+            summary_model,
+            and_(
+                getattr(paper_model, "id") == summary_model.paper_id,
+                summary_model.summary_type == SummaryType.keypoint.value
+            )
+        )
+        .where(
+            getattr(paper_model, "id").in_(ids),
+        )
+    )
+
+    results = db.execute(stmt).all()
+
+    # 데이터 가공
+    papers = []
+    for p_obj, summary_text in results:
+        # Paper 객체에 임시로 summary 속성 할당
+        setattr(p_obj, "summary", summary_text)
+        papers.append(p_obj)
 
     order = {pid: i for i, pid in enumerate(ids)}
     papers.sort(key=lambda p: order.get(int(getattr(p, "id")), 10**9))
@@ -201,18 +240,14 @@ def _paper_to_item(p, score: float):
     if cat_list:
         categories = ", ".join(cat_list)
 
-    authors = getattr(p, "authors", None) or ""
-
     return {
         "paper_id": int(pid) if pid is not None else None,
-        "score": float(score),
         "arxiv_id": arxiv_id,
         "title": getattr(p, "title", None),
-        "abstract": getattr(p, "abstract", None) or "",
-        "authors": authors,
+        "pdf_url": getattr(p, "pdf_url", None),
+        "abs_url": abs_url,
         "primary_category": primary_category,
         "categories": categories,
-        "published_at": published_at,
-        "abs_url": abs_url,
-        "pdf_url": getattr(p, "pdf_url", None),
+        "published_date": published_at,
+        "summary": getattr(p, "summary", None),
     }

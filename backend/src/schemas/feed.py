@@ -2,21 +2,24 @@ from pydantic import BaseModel, HttpUrl
 from datetime import date
 from typing import Optional, List
 
+# [수정] authors & abstract 삭제, summary 추가
 class FeedItem(BaseModel):
     paper_id: int
     arxiv_id: str
     title: str
-    abstract: str
-    authors: str
+
+    summary: Optional[str] = None
 
     primary_category: Optional[str] = None
     categories: Optional[str] = None
-    published_at: Optional[str] = None
+    published_date: date
 
-    abs_url: Optional[str] = None
-    pdf_url: Optional[str] = None
+    abs_url: HttpUrl
+    pdf_url: HttpUrl
 
-    score: float
+    is_bookmarked: bool
+    is_liked: bool
+
 
 class FeedResponse(BaseModel):
     user_id: str

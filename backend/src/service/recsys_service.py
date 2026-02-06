@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from config import settings
 from src.entity.paper import Paper
+from src.entity.summary import Summary
 from src.repository.event_repo import EventRepository
 from src.repository.paper_repo import PaperRepository
 from src.repository.profile_repo import ProfileRepository
@@ -91,6 +92,7 @@ class RecSysService:
             event_repo=self.event_repo,
             profile_repo=self.profile_repo,
             paper_model=Paper,
+            summary_model=Summary,
             faiss_store=self.faiss,
             candidate_k=candidate_k,
             pool_k=pool_k,

@@ -78,7 +78,9 @@ class PaperService:
                     published_date=doc.metadata.get("published_date"),
                     summary=doc.metadata.get("summary"),
                     is_liked=is_liked,
-                    is_bookmarked=is_bookmarked
+                    is_bookmarked=is_bookmarked,
+                    primary_category=doc.metadata.get("primary_category"),
+                    categories=doc.metadata.get("categories")
                 )
             )
 

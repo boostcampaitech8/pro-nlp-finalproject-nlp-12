@@ -1,5 +1,6 @@
 from pydantic import BaseModel, HttpUrl
 from datetime import date
+from typing import Optional
 
 class SearchRequest(BaseModel):
     """
@@ -18,6 +19,8 @@ class SearchResponse(BaseModel):
     pdf_url: HttpUrl
     abs_url: HttpUrl
     published_date: date
-    summary: str
+    summary: Optional[str] = None
     is_liked: bool
     is_bookmarked: bool
+    primary_category: Optional[str] = None
+    categories: Optional[str] = None

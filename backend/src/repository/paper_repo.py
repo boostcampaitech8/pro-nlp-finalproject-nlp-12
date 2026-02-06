@@ -1,7 +1,9 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select, desc
 from src.entity.paper import Paper
 from src.entity.summary import Summary, SummaryType
+from src.entity.primary_category import PrimaryCategory
+from src.entity.paper_category import PaperCategory
 from langchain_core.documents import Document
 
 class PaperRepository:
@@ -45,6 +47,9 @@ class PaperRepository:
         """
         results = self.db.query(Paper, Summary.summary_text).join(
             Summary, Paper.id==Summary.paper_id
+        ).options(
+            joinedload(Paper.primary_category).joinedload(PrimaryCategory.category),
+            joinedload(Paper.paper_categories).joinedload(PaperCategory.category)
         ).filter(
             Summary.summary_type==SummaryType.keypoint
         ).all()
@@ -54,6 +59,18 @@ class PaperRepository:
             # 제목과 초록을 묶어 질의와의 유사도를 비교하는 데에 사용
             content = f"Title: {p.title}\n\nAbstract: {p.abstract}"
 
+            primary_category = None
+            if p.primary_category and p.primary_category.category:
+                primary_category = p.primary_category.category.category_type
+
+            category_list = []
+            if p.paper_categories:
+                for pc in p.paper_categories:
+                    if pc.category:
+                        category_list.append(pc.category.category_type)
+            
+            categories = ", ".join(category_list) if category_list else None
+
             metadata = {
                 "paper_id": p.id,
                 "arxiv_id": p.arxiv_id,
@@ -61,7 +78,9 @@ class PaperRepository:
                 "abstract": p.abstract,
                 "pdf_url": str(p.pdf_url) if p.pdf_url else None,
                 "published_date": p.published_date.isoformat() if p.published_date else None,
-                "summary": keypoint_text
+                "summary": keypoint_text,
+                "primary_category": primary_category,
+                "categories": categories
             }
 
             docs.append(Document(page_content=content, metadata=metadata))
