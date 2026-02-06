@@ -75,7 +75,7 @@ export default function SearchPage() {
           }}
         >
           <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: "#111218" }}>
-            Quick Search
+            　Search
           </div>
           <form onSubmit={onSubmit} style={{ marginTop: 14, display: "flex", gap: 10 }}>
             <input

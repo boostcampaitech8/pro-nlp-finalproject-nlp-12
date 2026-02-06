@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -94,7 +94,7 @@ export default function ShortFormSection({
     if (!items?.length) return;
     setTransitionDir("next");
     setPaused(false);
-    // 다음으로 넘어갈 때 "이번 카드에서 누적된 시간" 초기화
+    // ?ㅼ쓬?쇰줈 ?섏뼱媛???"?대쾲 移대뱶?먯꽌 ?꾩쟻???쒓컙" 珥덇린??
     elapsedRef.current = 0;
     startedAtRef.current = Date.now();
     setProgress(0);
@@ -106,7 +106,7 @@ export default function ShortFormSection({
     if (!items?.length) return;
     setTransitionDir("prev");
     setPaused(false);
-    // 이전으로 넘어갈 때도 동일하게 초기화
+    // ?댁쟾?쇰줈 ?섏뼱媛??뚮룄 ?숈씪?섍쾶 珥덇린??
     elapsedRef.current = 0;
     startedAtRef.current = Date.now();
     setProgress(0);
@@ -139,7 +139,7 @@ export default function ShortFormSection({
       setProgress(p);
 
       if (p >= 1) {
-        // 다음으로 넘기기
+        // ?ㅼ쓬?쇰줈 ?섍린湲?
         elapsedRef.current = 0;
         startedAtRef.current = Date.now();
         setProgress(0);
@@ -161,7 +161,7 @@ export default function ShortFormSection({
     if (paused) {
       const now = Date.now();
       elapsedRef.current += now - startedAtRef.current; 
-      // progress는 유지(리셋 X)
+      // progress???좎?(由ъ뀑 X)
     } else {
       startedAtRef.current = Date.now(); 
     }
@@ -212,7 +212,7 @@ export default function ShortFormSection({
       setToast(active ? `${kind} ON` : `${kind} OFF`);
       window.setTimeout(() => setToast(null), 800);
     } catch (e: any) {
-      setToast("네트워크 오류로 되돌렸어");
+      setToast("?ㅽ듃?뚰겕 ?ㅻ쪟濡??섎룎?몄뼱");
       window.setTimeout(() => setToast(null), 1200);
       console.error(e);
     } finally {
@@ -244,7 +244,7 @@ export default function ShortFormSection({
     router.push(`/paper/${paperId}`);
   }, [cur, router]);
 
-  if (!cur) return <div style={{ padding: 16 }}>표시할 논문이 없습니다.</div>;
+  if (!cur) return <div style={{ padding: 16 }}>?쒖떆???쇰Ц???놁뒿?덈떎.</div>;
 
   const liked = cur.is_liked || isActive(cur.paper_id, "like");
   const bookmarked = cur.is_bookmarked || isActive(cur.paper_id, "bookmark");
@@ -360,7 +360,7 @@ export default function ShortFormSection({
                     color: "#1e3a8a",
                   }}
                 >
-                  • {cur.primary_category}
+                  {cur.primary_category}
                 </span>
               )}
               {cur.published_date && (
@@ -373,37 +373,54 @@ export default function ShortFormSection({
                     color: "#334155",
                   }}
                 >
-                  • {cur.published_date.slice(0, 10)}
+                  {cur.published_date.slice(0, 10)}
                 </span>
               )}
             </div>
 
-            {libLoading && <div style={{ marginTop: 8, fontSize: 12, opacity: 0.6 }}>내 라이브러리 불러오는 중…</div>}
+            {libLoading && (
+              <div style={{ marginTop: 8, fontSize: 12, opacity: 0.6 }}>
+                라이브러리 불러오는 중...
+              </div>
+            )}
             {libErr && <div style={{ marginTop: 8, fontSize: 12, color: "crimson" }}>{libErr}</div>}
           </div>
 
-          <div style={{ padding: 24, flex: 1, display: "flex" }}>
+          <div style={{ padding: 18, flex: 1, display: "flex" }}>
             <div
               style={{
-                fontSize: 14,
-                lineHeight: 1.75,
-                opacity: 0.92,
-                display: "-webkit-box",
-                WebkitLineClamp: 10,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-                background: "rgba(17, 18, 24, 0.04)",
-                border: "1px solid rgba(17, 18, 24, 0.06)",
-                borderRadius: 16,
-                padding: 18,
                 width: "100%",
-                maxWidth: 760,
-                margin: "0 auto",
-                alignSelf: "stretch",
-                maskImage: "linear-gradient(180deg, #000 0%, #000 85%, rgba(0,0,0,0) 100%)",
+                background:
+                  "linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.9) 100%)",
+                border: "1px solid rgba(17, 18, 24, 0.08)",
+                borderRadius: 16,
+                padding: "14px 16px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.6)",
               }}
             >
-              {cur.summary || "요약 결과가 존재하지 않습니다."}
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 900,
+                  letterSpacing: "0.12em",
+                  color: "#ff6b00",
+                }}
+              >
+                SUMMARY
+              </div>
+              <div
+                style={{
+                  fontSize: 15,
+                  lineHeight: 1.8,
+                  color: "#0f172a",
+                  fontWeight: 500,
+                }}
+              >
+                {cur.summary || "요약 결과가 존재하지 않습니다."}
+              </div>
             </div>
           </div>
 
@@ -434,7 +451,7 @@ export default function ShortFormSection({
                   boxShadow: liked ? "0 6px 16px rgba(255, 107, 0, 0.2)" : "none",
                 }}
               >
-                {liked ? "❤️ Liked" : "🤍 Like"}
+                {liked ? "♥ Liked" : "♡ Like"}
               </button>
 
               <button
@@ -451,7 +468,7 @@ export default function ShortFormSection({
                   background: bookmarked ? "rgba(17, 18, 24, 0.08)" : "white",
                 }}
               >
-                {bookmarked ? "🔖 Bookmarked" : "📑 Bookmark"}
+                {bookmarked ? "🔖 Bookmarked" : "🔖 Bookmark"}
               </button>
 
               <button
@@ -469,8 +486,9 @@ export default function ShortFormSection({
                   justifyContent: "center",
                   gap: 6
                 }}
-              ><ExternalLink size={14} style={{ verticalAlign: "middle", marginLeft: 6 }} />
-                자세히 보기 
+              >
+                <ExternalLink size={14} style={{ verticalAlign: "middle", marginLeft: 6 }} />
+                자세히 보기
               </button>
             </div>
 

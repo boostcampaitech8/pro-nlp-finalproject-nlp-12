@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getFeed, FeedItem } from "../../lib/api";
 import { getUserId } from "../../lib/user";
 import ShortFormSection from "../../components/feed/ShortFormSection";
@@ -13,6 +13,23 @@ export default function HomePage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [showModeHelp, setShowModeHelp] = useState(false);
+  const helpWrapRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!showModeHelp) return;
+
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (helpWrapRef.current && !helpWrapRef.current.contains(target)) {
+        setShowModeHelp(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [showModeHelp]);
 
   const fetchPage = useCallback(async (cursor: string | null, m: "fast" | "smart") => {
     const uid = getUserId();
@@ -90,45 +107,107 @@ export default function HomePage() {
     <>
       <div style={{ padding: "12px 16px 0", display: "flex", justifyContent: "center" }}>
         <div
-          style={{
-            display: "inline-flex",
-            gap: 6,
-            padding: 4,
-            borderRadius: 999,
-            border: "1px solid rgba(17, 18, 24, 0.12)",
-            background: "white",
-          }}
+          ref={helpWrapRef}
+          style={{ display: "inline-flex", alignItems: "center", gap: 8, position: "relative" }}
         >
-          <button
-            onClick={() => setMode("fast")}
+          <div
             style={{
-              padding: "4px 10px",
+              display: "inline-flex",
+              gap: 6,
+              padding: 4,
               borderRadius: 999,
-              border: "1px solid transparent",
-              background: mode === "fast" ? "rgba(255, 107, 0, 0.16)" : "transparent",
-              fontWeight: 700,
-              cursor: "pointer",
-              color: "#111218",
-              fontSize: 12,
+              border: "1px solid rgba(17, 18, 24, 0.12)",
+              background: "white",
             }}
           >
-            Fast
-          </button>
+            <button
+              onClick={() => setMode("fast")}
+              style={{
+                padding: "4px 10px",
+                borderRadius: 999,
+                border: "1px solid transparent",
+                background: mode === "fast" ? "rgba(255, 107, 0, 0.16)" : "transparent",
+                fontWeight: 700,
+                cursor: "pointer",
+                color: "#111218",
+                fontSize: 12,
+              }}
+            >
+              Fast
+            </button>
+            <button
+              onClick={() => setMode("smart")}
+              style={{
+                padding: "4px 10px",
+                borderRadius: 999,
+                border: "1px solid transparent",
+                background: mode === "smart" ? "rgba(37, 99, 235, 0.16)" : "transparent",
+                fontWeight: 700,
+                cursor: "pointer",
+                color: "#111218",
+                fontSize: 12,
+              }}
+            >
+              Smart
+            </button>
+          </div>
           <button
-            onClick={() => setMode("smart")}
+            type="button"
+            onClick={() => setShowModeHelp((v) => !v)}
+            aria-label="추천 모드 안내"
             style={{
-              padding: "4px 10px",
+              width: 20,
+              height: 20,
               borderRadius: 999,
-              border: "1px solid transparent",
-              background: mode === "smart" ? "rgba(37, 99, 235, 0.16)" : "transparent",
-              fontWeight: 700,
-              cursor: "pointer",
-              color: "#111218",
+              border: "1px solid rgba(17, 18, 24, 0.18)",
+              background: "white",
               fontSize: 12,
+              fontWeight: 700,
+              color: "#111218",
+              lineHeight: "18px",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            Smart
+            i
           </button>
+          {showModeHelp && (
+            <div
+              style={{
+                position: "absolute",
+                top: 32,
+                right: 0,
+                width: 240,
+                padding: "10px 12px",
+                borderRadius: 12,
+                background: "white",
+                border: "1px solid rgba(17, 18, 24, 0.12)",
+                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+                fontSize: 12,
+                color: "#111218",
+                zIndex: 5,
+              }}
+            >
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Fast</div>
+              <div style={{ color: "#475569", lineHeight: 1.5 }}>
+                빠르게 추천을 받아보세요.
+                <br />
+                저장된 논문을 기반으로 즉시 보여줍니다.
+              </div>
+              <div style={{ fontWeight: 700, margin: "10px 0 6px" }}>Smart</div>
+              <div style={{ color: "#475569", lineHeight: 1.5 }}>
+                더 넓게 탐색합니다.
+                <br />
+                실시간으로 논문을 확장 탐색하여
+                <br />
+                더 다양한 추천을 제공합니다.
+                <br />
+                (조금 더 시간이 걸릴 수 있어요)
+              </div>
+            </div>
+          )}
         </div>
       </div>
       {!loading && <ShortFormSection items={items} onNeedMore={fetchMore} />}
