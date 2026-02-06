@@ -12,13 +12,13 @@ class FeedItem(BaseModel):
 
     primary_category: Optional[str] = None
     categories: Optional[str] = None
-    published_date: date
+    published_date: Optional[date] = None
 
     abs_url: HttpUrl
     pdf_url: HttpUrl
 
-    is_bookmarked: bool
-    is_liked: bool
+    is_bookmarked: Optional[bool] = False
+    is_liked: Optional[bool] = False
 
 
 class FeedResponse(BaseModel):

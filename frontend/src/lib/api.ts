@@ -22,17 +22,14 @@ export type FeedItem = {
   paper_id: number;
   arxiv_id?: string | null;
   title: string;
-  abstract: string;
-  authors?: any;
-  primary_category?: string | null;
-  categories?: any;
   published_date?: string | null;
   pdf_url?: string | null;
   abs_url?: string | null;
   summary?: string;
-
-  is_liked?: boolean;
-  is_bookmarked?: boolean;
+  primary_category?: string | null;
+  categories?: any | null;
+  is_liked: boolean;
+  is_bookmarked: boolean;
 };
 
 export async function getFeed(user_id: string, k = 20, cursor?: string | null, mode?: "fast" | "quick" | "smart") {
@@ -84,17 +81,23 @@ export async function getLibrary(user_id: string, type: "all" | "like" | "bookma
 /*
 * 논문 요약 관련 스키마
 */
-export type SummaryItem = {
-  paper_id: number;
+export type SummaryDetail = {
   summary_type: string;
   summary_text: string;
+}
+
+export type SummaryItem = {
+  paper_id: number;
+  pdf_url: string;
+  abs_url: string;
+  summaries: SummaryDetail[];
 }
 
 /*
 * 클릭 이벤트 저장 및 논문 요약본 배열 반환
 */
 export async function getPaperSummary(user_id: string, paper_id: number) {
-  return http<SummaryItem[]>(`/summary/`, {
+  return http<SummaryItem>(`/summary/`, {
     method: "POST",
     body: JSON.stringify({ user_id, paper_id })
   })

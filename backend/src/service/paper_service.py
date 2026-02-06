@@ -6,7 +6,7 @@ from src.service.summarization.parse_service import ParseService
 from src.service.summarization.summarize_service import SummarizeService
 from src.client.clova_client import ClovaClient
 from src.schemas.search import SearchResponse
-from src.schemas.summary import SummaryResponse
+from src.schemas.summary import SummaryResponse, SummaryDetail
 from src.entity.user_event import EventType
 from langchain_core.documents import Document
 from sqlalchemy.orm import Session
@@ -86,7 +86,7 @@ class PaperService:
 
         return search_results
     
-    def get_summaries_and_log_click(self, user_id: str, paper_id: int) -> List[SummaryResponse]:
+    def get_summaries_and_log_click(self, user_id: str, paper_id: int) -> SummaryResponse:
         """
         클릭 이벤트를 저장하고, keypoint를 제외한 요약을 반환합니다.
         """
@@ -98,12 +98,30 @@ class PaperService:
         )
 
         # 논문 요약 조회 및 반환
-        results = self.summary_repository.get_summaries_except_keypoint(paper_id)
+        summaries = self.summary_repository.get_summaries_except_keypoint(paper_id)
 
-        return [
-            SummaryResponse(
-                paper_id=r.paper_id,
-                summary_type=r.summary_type,
-                summary_text=r.summary_text
-            ) for r in results
+        paper = self.paper_repository.get_by_id(paper_id)
+
+        if paper.pdf_url is None:
+            pdf_url = None
+            abs_url = None
+        else:
+            pdf_url = str(paper.pdf_url)
+            abs_url = pdf_url.replace("pdf", "abs").removesuffix(".abs")
+        
+        if not summaries:
+            summaries = []
+
+        summary_details = [
+            SummaryDetail(
+                summary_type=s.summary_type,
+                summary_text=s.summary_text
+            ) for s in summaries
         ]
+
+        return SummaryResponse(
+            paper_id=paper_id,
+            pdf_url=pdf_url,
+            abs_url=abs_url,
+            summaries=summary_details
+        )

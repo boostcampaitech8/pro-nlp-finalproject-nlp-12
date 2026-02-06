@@ -246,8 +246,8 @@ export default function ShortFormSection({
 
   if (!cur) return <div style={{ padding: 16 }}>표시할 논문이 없습니다.</div>;
 
-  const liked = isActive(cur.paper_id, "like");
-  const bookmarked = isActive(cur.paper_id, "bookmark");
+  const liked = cur.is_liked || isActive(cur.paper_id, "like");
+  const bookmarked = cur.is_bookmarked || isActive(cur.paper_id, "bookmark");
 
   const likeKey: PendingKey = `${cur.paper_id}:like`;
   const bmKey: PendingKey = `${cur.paper_id}:bookmark`;
@@ -363,7 +363,7 @@ export default function ShortFormSection({
                   • {cur.primary_category}
                 </span>
               )}
-              {cur.published_at && (
+              {cur.published_date && (
                 <span
                   style={{
                     padding: "4px 8px",
@@ -373,7 +373,7 @@ export default function ShortFormSection({
                     color: "#334155",
                   }}
                 >
-                  • {cur.published_at.slice(0, 10)}
+                  • {cur.published_date.slice(0, 10)}
                 </span>
               )}
             </div>
@@ -403,7 +403,7 @@ export default function ShortFormSection({
                 maskImage: "linear-gradient(180deg, #000 0%, #000 85%, rgba(0,0,0,0) 100%)",
               }}
             >
-              {cur.summary || cur.abstract}
+              {cur.summary || "요약 결과가 존재하지 않습니다."}
             </div>
           </div>
 

@@ -19,7 +19,7 @@ def get_paper_service(
     all_papers = request.app.state.all_papers
     return PaperService(db, faiss_store, all_papers)
 
-@router.post("/", response_model=List[SummaryResponse])
+@router.post("/", response_model=SummaryResponse)
 async def read_summaries(
     request: SummaryRequest,
     service: PaperService = Depends(get_paper_service)    

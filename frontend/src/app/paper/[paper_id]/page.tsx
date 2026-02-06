@@ -12,8 +12,7 @@ export default function PaperDetailPage(props: {
   const searchParams = props.searchParams ? use(props.searchParams) : {};
   const paper_id = params.paper_id;
 
-  const [summaries, setSummaries] = useState<SummaryItem[]>([]);
-  const [paperData, setPaperData] = useState<any>(null);
+  const [paperData, setPaperData] = useState<SummaryItem | null>(null);
   const [loading, setLoading] = useState(true);
 
   const backHref = searchParams?.from === "mypage" ? "/mypage" : "/home";
@@ -24,10 +23,8 @@ export default function PaperDetailPage(props: {
       if (!uid) return;
       try {
         setLoading(true);
-
-        // [수정 필요] 요약본과 논문 상세 정보를 동시에 가져오기
-        const SummaryData = await getPaperSummary(uid, Number(paper_id));
-        setSummaries(SummaryData);
+        const response = await getPaperSummary(uid, Number(paper_id));
+        setPaperData(response);
       } catch (err) {
         console.error("요약본 로드 실패:", err);
       } finally {
@@ -37,9 +34,44 @@ export default function PaperDetailPage(props: {
     loadSummary();
   }, [paper_id]);
 
+  // 로딩 중 화면
+  if (loading) {
+    return (
+      <div style={{
+        position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+        display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
+        background: "#ffffff", zIndex: 1000
+      }}>
+        <div style={{ fontSize: "60px", marginBottom: "20px" }}>🐣</div> 
+        <div style={{ fontSize: "20px", fontWeight: "700", color: "#111218" }}>
+          논문을 열심히 요약하고 있어요!
+        </div>
+        <div style={{ marginTop: "10px", fontSize: "14px", color: "#64748b" }}>
+          잠시만 기다려 주세요...
+        </div>
+      </div>
+    );
+  }
+
+  // 준비 된 요약 결과가 없을 때의 화면
+  if (!loading && (!paperData?.summaries || paperData?.summaries.length == 0)) {
+    return (
+      <div style={{
+        position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+        display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
+        background: "#ffffff", zIndex: 1000
+      }}>
+        <div style={{ fontSize: "60px", marginBottom: "20px" }}>📭</div> 
+        <div style={{ fontSize: "20px", fontWeight: "700", color: "#111218" }}>
+          준비된 요약 내용이 없습니다.
+        </div>
+      </div>
+    );
+  }
+
   // 특정 타입의 요약을 찾는 함수
   const getSummary = (type: string) =>
-    summaries.find(s => s.summary_type.toLowerCase() === type.toLowerCase())?.summary_text;
+    paperData?.summaries.find(s => s.summary_type.toLowerCase() === type.toLowerCase())?.summary_text;
 
   return (
     <div style={{ maxWidth: 980, margin: "0 auto", padding: "24px 16px 120px" }}>
@@ -52,10 +84,10 @@ export default function PaperDetailPage(props: {
           <SummaryBox title="Significance" text={getSummary("significance")} color="rgba(255, 45, 85, 0.08)" borderColor="rgba(255, 45, 85, 0.2)" />
         </div>
 
-        {/* <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {paperData.web_url ? (
+        <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {paperData?.abs_url ? (
             <a
-              href={paperData.web_url}
+              href={paperData?.abs_url}
               target="_blank"
               rel="noreferrer"
               style={{
@@ -71,9 +103,9 @@ export default function PaperDetailPage(props: {
               웹 링크
             </a>
           ) : null}
-          {paperData.pdf_url ? (
+          {paperData?.pdf_url ? (
             <a
-              href={paperData.pdf_url}
+              href={paperData?.pdf_url}
               target="_blank"
               rel="noreferrer"
               style={{
@@ -89,7 +121,7 @@ export default function PaperDetailPage(props: {
               PDF 링크
             </a>
           ) : null}
-        </div> */}
+        </div>
       </div> 
     </div>
   );
@@ -100,7 +132,7 @@ function SummaryBox({ title, text, color, borderColor }: any) {
     <div style={{ padding: 20, borderRadius: 18, background: color, border: `1px solid ${borderColor}` }}>
       <div style={{ fontWeight: 800, marginBottom: 8, fontSize: 16 }}>{title}</div>
       <div style={{ fontSize: 15, lineHeight: 1.7, color: "#2c2f3a" }}>
-        {text || `${title} 섹션에 대한 상세 요약을 불러오는 중입니다.`}
+        {text || `${title}에 대한 요약 정보를 찾을 수 없습니다.`}
       </div>
     </div>
   );

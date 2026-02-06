@@ -59,6 +59,33 @@ export default function HomePage() {
 
   if (err) return <div style={{ padding: 16 }}>에러: {err}</div>;
 
+  // 로딩 중 화면
+  if (loading) {
+    return (
+      <div style={{
+        position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+        display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
+        background: "#ffffff", zIndex: 1000
+      }}>
+        <div style={{ fontSize: "60px", marginBottom: "20px" }}>🐣</div> 
+        <div style={{ fontSize: "20px", fontWeight: "700", color: "#111218" }}>
+          {mode === "smart" ? (
+            <>논문을 꼼꼼하게 분석하는 중이에요</>
+          ) : (
+            <>사용자님께 딱 맞는 논문을 가져오고 있어요</>
+          )}
+        </div>
+        <div style={{ marginTop: "10px", fontSize: "14px", color: "#64748b" }}>
+          {mode === "smart" ? (
+            <>스마트 모드는 정교한 결과를 위해 응답이 느릴 수 있어요</>
+          ) : (
+            <>잠시만 기다려 주세요.</>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div style={{ padding: "12px 16px 0", display: "flex", justifyContent: "center" }}>
@@ -104,19 +131,12 @@ export default function HomePage() {
           </button>
         </div>
       </div>
-      {loading && (
-        <div style={{ padding: "10px 16px 0", color: "#0f172a", fontWeight: 700, textAlign: "center" }}>
-          추천을 불러오는 중...
-        </div>
-      )}
       {!loading && <ShortFormSection items={items} onNeedMore={fetchMore} />}
       {mode === "fast" && loadingMore && (
-        <div style={{ padding: 12, opacity: 0.6 }}>다음 추천 불러오는 중...</div>
+        <div style={{ padding: 12, opacity: 0.6 }}></div>
       )}
       {mode === "smart" && (
-        <div style={{ padding: 12, opacity: 0.6 }}>
-          Smart 모드는 분석 기반 추천입니다. (응답이 느릴 수 있어요)
-        </div>
+        <div style={{ padding: 12, opacity: 0.6 }}></div>
       )}
     </>
   );
