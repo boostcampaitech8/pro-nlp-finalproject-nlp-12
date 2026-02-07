@@ -33,17 +33,14 @@ class SummaryRepository:
             self.db.add(new_summary)
         self.db.commit()
 
-    def get_summaries_except_keypoint(self, paper_id: int):
+    def get_summaries(self, paper_id: int):
         """
-        keypoint를 제외한 요약을 반환합니다.
+        요약을 반환합니다.
         """
-        results = self.db.query(
+        return self.db.query(
             Summary.paper_id,
             Summary.summary_type,
             Summary.summary_text
         ).filter(
-            Summary.paper_id==paper_id,
-            Summary.summary_type!=SummaryType.keypoint  # keypoint 제외
+            Summary.paper_id==paper_id
         ).all()
-
-        return results

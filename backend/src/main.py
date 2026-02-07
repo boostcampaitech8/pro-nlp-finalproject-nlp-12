@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from src.api import search, summary, admin, events, feed, library, users
 from src.client.faiss_store import get_faiss_store
 from src.repository.paper_repo import PaperRepository
+from src.service.search.search_service import SearchService
 from src.entity.base import init_db
 import uvicorn
 import logging
@@ -30,8 +31,7 @@ async def lifespan(app: FastAPI):
         faiss_store = get_faiss_store()
         faiss_store.update_papers(all_papers)
 
-        app.state.faiss_store = faiss_store
-        app.state.all_papers = all_papers
+        app.state.search_service = SearchService(faiss_store, all_papers)
     finally:
         # 세션 반환
         try:

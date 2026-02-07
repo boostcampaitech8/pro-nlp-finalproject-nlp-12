@@ -54,6 +54,8 @@ class SearchService:
         self.stemmer = PorterStemmer() # 어간 추출
         self.translator = GoogleTranslator(source='auto', target='en') # 번역
 
+        self.sparse_retriever = self.SparseRetriever()
+        self.dense_retriever = self.DenseRetriever()
         self.hybrid_retriever = self.HybridRetriever()
 
     def preprocess_func(self, text: str):
@@ -120,9 +122,6 @@ class SearchService:
         """
         하이브리드 검색기 반환
         """
-        sparse_retriever = self.SparseRetriever()
-        dense_retriever = self.DenseRetriever()
-
         # [검증 함수] BM25로 들어가는 데이터 확인
         def check_sparse_input(query):
             return query
@@ -133,8 +132,8 @@ class SearchService:
 
         # 1. 두 검색기를 병렬로 실행하여 각각 결과를 가져오게 설정
         retrievers_chain = RunnableParallel({
-            "sparse": itemgetter("translated_query") | RunnableLambda(check_sparse_input) | sparse_retriever,
-            "dense": itemgetter("original_query") | RunnableLambda(check_dense_input) | dense_retriever
+            "sparse": itemgetter("translated_query") | RunnableLambda(check_sparse_input) | self.sparse_retriever,
+            "dense": itemgetter("original_query") | RunnableLambda(check_dense_input) | self.dense_retriever
         })
 
         # 2. 두 결과를 합치고 순위를 재조정하는 RRF 함수 정의

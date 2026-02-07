@@ -13,11 +13,13 @@ type PendingKey = `${number}:${"like" | "bookmark"}`;
 export default function ShortFormSection({
   items,
   onNeedMore,
+  mode = "fast",
   navBarHeight = 64,
   durationMs = 10_000,
 }: {
   items: FeedItem[];
   onNeedMore?: () => void;
+  mode?: "fast" | "smart";
   navBarHeight?: number;
   durationMs?: number;
 }) {
@@ -229,20 +231,33 @@ export default function ShortFormSection({
   
     console.log("onDetail cur =", cur);
     console.log("onDetail cur.paper_id =", cur.paper_id);
+    console.log("onDetail cur.arxiv_id =", cur.arxiv_id);
   
-    const paperId = cur.paper_id; 
+    const paperId = cur.paper_id;
+    const arxivId = cur.arxiv_id;
+    const params = new URLSearchParams();
+
+    if (mode === "smart" && arxivId) {
+      // Smart 모드
+      params.set("arxiv_id", arxivId);
+    } else if (paperId !== undefined && paperId !== null) {
+      // Fast 모드 또는 search, mypage
+      params.set("paper_id", String(paperId));
+    }
+
+    const pathId = paperId || arxivId;
   
-    if (paperId === undefined || paperId === null) {
-      console.error("paper_id is missing. cur =", cur);
+    if (!pathId) {
+      console.error("No identifier (paper_id or arxiv_id) found. cur =", cur);
       return;
     }
   
     try {
-      sessionStorage.setItem(`paper:${paperId}`, JSON.stringify(cur));
+      sessionStorage.setItem(`paper:${pathId}`, JSON.stringify(cur));
     } catch {}
   
-    router.push(`/paper/${paperId}`);
-  }, [cur, router]);
+    router.push(`/paper/?${params.toString()}`);
+  }, [cur, router, mode]);
 
   if (!cur) return <div style={{ padding: 16 }}>?쒖떆???쇰Ц???놁뒿?덈떎.</div>;
 

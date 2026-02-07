@@ -5,12 +5,15 @@ from src.database.mysql import get_mysql_db
 from src.schemas.feed import FeedResponse, FeedItem
 from src.service.recsys_service import RecSysService
 from src.service.smart_recommend_service import SmartRecommendService
+from src.database.valkey import get_valkey_db
+from src.service.paper_service import PaperService
+from src.api.dependencies import get_paper_service
+from redis import asyncio
 
 router = APIRouter(prefix="/feed", tags=["feed"])
 
-
 @router.get("", response_model=FeedResponse)
-def get_feed(
+async def get_feed(
     user_id: str,
     limit: int = 20,
     cursor: str | None = None,
@@ -18,13 +21,15 @@ def get_feed(
     k: int | None = None,
     mode: str = Query("quick", pattern="^(quick|smart|fast)$"),
     db: Session = Depends(get_mysql_db),
+    paper_service: PaperService = Depends(get_paper_service),
+    valkey: asyncio.Redis = Depends(get_valkey_db)
 ):
     if k is not None:
         limit = k
 
     if mode == "smart":
-        smart = SmartRecommendService(db)
-        out = smart.recommend(user_id=user_id, k=limit)
+        smart = SmartRecommendService(db, paper_service, valkey)
+        out = await smart.recommend(user_id=user_id, k=limit)
         items = out.get("items", [])
         next_cursor = None
         has_more = False

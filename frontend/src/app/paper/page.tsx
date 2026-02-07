@@ -6,16 +6,18 @@ import { getUserId } from "@/lib/user";
 
 export default function PaperDetailPage(props: {
   params: Promise<{ paper_id: string }>;
-  searchParams?: Promise<{ from?: string }>;
+  searchParams?: Promise<{
+    paper_id?: string;
+    arxiv_id?: string
+  }>;
 }) {
-  const params = use(props.params);
   const searchParams = props.searchParams ? use(props.searchParams) : {};
-  const paper_id = params.paper_id;
+
+  const paper_id = searchParams.paper_id;
+  const arxiv_id = searchParams.arxiv_id;
 
   const [paperData, setPaperData] = useState<SummaryItem | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const backHref = searchParams?.from === "mypage" ? "/mypage" : "/home";
 
   useEffect(() => {
     async function loadSummary() {
@@ -23,7 +25,16 @@ export default function PaperDetailPage(props: {
       if (!uid) return;
       try {
         setLoading(true);
-        const response = await getPaperSummary(uid, Number(paper_id));
+
+        /**
+         * [수정] 
+         * 1. Smart 모드일 때는 쿼리의 arxiv_id를 우선 사용
+         * 2. Fast 모드이거나 일반적인 경우 paper_id를 숫자로 변환하여 사용
+         */
+        const pid = paper_id ? Number(paper_id) : null;
+        const aid = arxiv_id || null;
+
+        const response = await getPaperSummary(uid, pid, aid);
         setPaperData(response);
       } catch (err) {
         console.error("요약본 로드 실패:", err);
@@ -32,7 +43,7 @@ export default function PaperDetailPage(props: {
       }
     }
     loadSummary();
-  }, [paper_id]);
+  }, [paper_id, arxiv_id]);
 
   // 로딩 중 화면
   if (loading) {

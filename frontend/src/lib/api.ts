@@ -96,11 +96,11 @@ export type SummaryItem = {
 /*
 * 클릭 이벤트 저장 및 논문 요약본 배열 반환
 */
-export async function getPaperSummary(user_id: string, paper_id: number) {
+export async function getPaperSummary(user_id: string, paper_id: number | null = null, arxiv_id: string | null = null) {
   return http<SummaryItem>(`/summary/`, {
     method: "POST",
-    body: JSON.stringify({ user_id, paper_id })
-  })
+    body: JSON.stringify({ user_id, paper_id, arxiv_id })
+  });
 }
 
 export async function postOnboarding(input: { user_id: string; categories: string[] }) {

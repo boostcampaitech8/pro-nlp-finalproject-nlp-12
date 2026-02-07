@@ -22,6 +22,7 @@ from src.repository.event_repo import EventRepository
 from src.service.recsys.vector_utils import parse_vector_json
 from src.service.recsys.user_vector import maybe_refresh_user_vector
 from src.client.faiss_store import get_faiss_store
+from src.schemas.summary import SummaryType
 
 logger = logging.getLogger(__name__)
 
@@ -63,13 +64,17 @@ class Candidate:
     raw_score: float
     final_score: float = 0.0
 
-
 class SmartRecommendService:
     """
     Smart 추천: FAISS + (arXiv placeholder) + category fallback
     """
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        paper_service: Optional[Any] = None,
+        valkey: Optional[Any] = None
+    ):
         self.db = db
         self.paper_repo = PaperRepository(db)
         self.profile_repo = ProfileRepository(db)
@@ -78,6 +83,8 @@ class SmartRecommendService:
             dim=int(getattr(settings, "EMBED_DIM", 384)),
             index_path=getattr(settings, "FAISS_INDEX_PATH", "data/faiss/index.bin"),
         )
+        self.paper_service = paper_service
+        self.valkey = valkey
 
     def get_profile(self, user_id: str):
         return self.profile_repo.get(user_id)
@@ -139,7 +146,7 @@ class SmartRecommendService:
         except Exception:
             return set()
 
-    def recommend(
+    async def recommend(
         self,
         user_id: str,
         k: int = 30,
@@ -208,23 +215,25 @@ class SmartRecommendService:
         merged = self._merge_and_score(candidates, keywords, seen_ids)
         timings["merge_score"] = round(time.time() - t0, 3)
 
-        items = [
-            {
+        for c in merged[:k]:
+            arxiv_id = c.arxiv_id
+            pdf_url = c.pdf_url
+
+            summary = await self.get_summary(arxiv_id, pdf_url)
+
+            items = [{
                 "paper_id": c.paper_id,
                 "arxiv_id": c.arxiv_id,
                 "title": c.title,
-                "abstract": c.abstract or "",
-                "authors": c.authors or "",
+                "summary": summary,
                 "primary_category": c.primary_category,
                 "categories": c.categories,
-                "published_at": c.published_at,
+                "published_date": c.published_at,
                 "abs_url": c.abs_url,
                 "pdf_url": c.pdf_url,
-                "score": round(c.final_score, 4),
-                "source": c.source,
-            }
-            for c in merged[:k]
-        ]
+                "is_bookmarked": False,
+                "is_liked": False
+            }]
 
         timings["total"] = round(time.time() - total_start, 3)
 
@@ -234,6 +243,36 @@ class SmartRecommendService:
             "cold_start": False,
             "timings": timings,
         }
+    
+    async def get_summary(self, arxiv_id: str, pdf_url: str):
+        """
+        캐시를 확인하여 논문 요약(Keypoint) 정보를 가져오거나, 없을 경우 새로 생성하여 캐싱합니다.
+        """
+        cache_key = f"summary:{arxiv_id}"
+        cached_data = await self.valkey.get(cache_key)
+
+        # 캐싱 데이터가 있는지 확인
+        if cached_data:
+            paper_data = json.loads(cached_data)
+            summaries = paper_data.get("summaries")
+        else:
+            # 없으면 요약
+            summaries = await self.paper_service.summarize_and_save(arxiv_id, pdf_url, is_store=False)
+            # 새로 생성된 데이터는 valkey에 저장
+            if summaries:
+                summaries = {
+                    s.summary_type.value: s.summary_text
+                    for s in summaries
+                }
+                paper_data = {
+                    "summaries": summaries,
+                    "pdf_url": pdf_url
+                }
+                await self.valkey.setex(cache_key, 86400, json.dumps(paper_data))
+            else:
+                return None
+
+        return summaries.get(SummaryType.keypoint.value)
 
     def _paper_meta(self, p: Paper) -> dict:
         arxiv_id = getattr(p, "arxiv_id", None) or ""

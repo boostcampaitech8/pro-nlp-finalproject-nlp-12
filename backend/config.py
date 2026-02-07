@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     mysql_user: str
     mysql_password: str
     mysql_db: str
+    valkey_uri: str
     clovastudio_api_key: str
 
     # Embedding
