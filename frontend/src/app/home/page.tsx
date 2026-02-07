@@ -66,12 +66,12 @@ export default function HomePage() {
 
     setLoadingMore(true);
     try {
-        await fetchPage(nextCursor, mode);
-      } catch (e: any) {
-        setErr(String(e?.message ?? e));
-      } finally {
-        setLoadingMore(false);
-      }
+      await fetchPage(nextCursor, mode);
+    } catch (e: any) {
+      setErr(String(e?.message ?? e));
+    } finally {
+      setLoadingMore(false);
+    }
   }, [hasMore, loadingMore, nextCursor, fetchPage, mode]);
 
   if (err) return <div style={{ padding: 16 }}>에러: {err}</div>;
@@ -186,38 +186,51 @@ export default function HomePage() {
       {loading && (
         <div
           style={{
-            marginTop: 80,
             padding: "12px 16px",
             display: "flex",
-            flexDirection: "column",
+            justifyContent: "center",
             alignItems: "center",
-            textAlign: "center",
+            minHeight: "42dvh",
           }}
         >
-          <div style={{ fontSize: "48px", marginBottom: 10 }}>🐣</div>
-          <div style={{ fontSize: "16px", fontWeight: 700, color: "#111218" }}>
-            {mode === "smart" ? (
-              <>논문을 꼼꼼하게 분석하는 중이에요</>
-            ) : (
-              <>사용자님께 딱 맞는 논문을 가져오고 있어요</>
-            )}
-          </div>
-          <div style={{ marginTop: 6, fontSize: "13px", color: "#64748b" }}>
-            {mode === "smart" ? (
-              <>스마트 모드는 정교한 결과를 위해 응답이 느릴 수 있어요</>
-            ) : (
-              <>잠시만 기다려 주세요.</>
-            )}
+          <div
+            style={{
+              width: "min(640px, 100%)",
+              padding: "22px 18px 18px",
+              borderRadius: 16,
+              border: "1px solid rgba(17, 18, 24, 0.08)",
+              background: "rgba(255, 255, 255, 0.9)",
+              boxShadow: "0 10px 30px rgba(17, 18, 24, 0.12)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              textAlign: "center",
+              gap: 10,
+            }}
+          >
+            <div style={{ fontSize: "34px", lineHeight: 1 }}>🐣</div>
+            <div>
+              <div style={{ fontSize: "16px", fontWeight: 700, color: "#111218" }}>
+                {mode === "smart" ? (
+                  <>논문을 꼼꼼하게 분석하는 중이에요</>
+                ) : (
+                  <>사용자님께 딱 맞는 논문을 가져오고 있어요</>
+                )}
+              </div>
+              <div style={{ marginTop: 6, fontSize: "13px", color: "#64748b" }}>
+                {mode === "smart" ? (
+                  <>스마트 모드는 정교한 결과를 위해 응답이 느릴 수 있어요</>
+                ) : (
+                  <>잠시만 기다려 주세요.</>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
       {!loading && <ShortFormSection items={items} onNeedMore={fetchMore} mode={mode} />}
-      {mode === "fast" && loadingMore && (
-        <div style={{ padding: 12, opacity: 0.6 }}></div>
-      )}
-      {mode === "smart" && (
-        <div style={{ padding: 12, opacity: 0.6 }}></div>
-      )}
+      {mode === "fast" && loadingMore && <div style={{ padding: 12, opacity: 0.6 }}></div>}
+      {mode === "smart" && <div style={{ padding: 12, opacity: 0.6 }}></div>}
     </>
   );
 }

@@ -14,7 +14,7 @@ export default function ShortFormSection({
   items,
   onNeedMore,
   mode = "fast",
-  navBarHeight = 64,
+  navBarHeight = 0,
   durationMs = 10_000,
 }: {
   items: FeedItem[];
@@ -96,7 +96,6 @@ export default function ShortFormSection({
     if (!items?.length) return;
     setTransitionDir("next");
     setPaused(false);
-    // ?ㅼ쓬?쇰줈 ?섏뼱媛???"?대쾲 移대뱶?먯꽌 ?꾩쟻???쒓컙" 珥덇린??
     elapsedRef.current = 0;
     startedAtRef.current = Date.now();
     setProgress(0);
@@ -106,15 +105,15 @@ export default function ShortFormSection({
 
   const goPrev = useCallback(() => {
     if (!items?.length) return;
+    if (idx <= 0) return;
     setTransitionDir("prev");
     setPaused(false);
-    // ?댁쟾?쇰줈 ?섏뼱媛??뚮룄 ?숈씪?섍쾶 珥덇린??
     elapsedRef.current = 0;
     startedAtRef.current = Date.now();
     setProgress(0);
 
-    setIdx((v) => (v - 1 + items.length) % items.length);
-  }, [items?.length]);
+    setIdx((v) => (v <= 0 ? 0 : v - 1));
+  }, [items?.length, idx]);
 
   const togglePause = useCallback(() => {
     setPaused((p) => !p);
@@ -141,7 +140,6 @@ export default function ShortFormSection({
       setProgress(p);
 
       if (p >= 1) {
-        // ?ㅼ쓬?쇰줈 ?섍린湲?
         elapsedRef.current = 0;
         startedAtRef.current = Date.now();
         setProgress(0);
@@ -163,7 +161,6 @@ export default function ShortFormSection({
     if (paused) {
       const now = Date.now();
       elapsedRef.current += now - startedAtRef.current; 
-      // progress???좎?(由ъ뀑 X)
     } else {
       startedAtRef.current = Date.now(); 
     }
@@ -214,7 +211,7 @@ export default function ShortFormSection({
       setToast(active ? `${kind} ON` : `${kind} OFF`);
       window.setTimeout(() => setToast(null), 800);
     } catch (e: any) {
-      setToast("?ㅽ듃?뚰겕 ?ㅻ쪟濡??섎룎?몄뼱");
+      setToast("네트워크 오류로 되돌렸어요");
       window.setTimeout(() => setToast(null), 1200);
       console.error(e);
     } finally {
@@ -255,11 +252,11 @@ export default function ShortFormSection({
     try {
       sessionStorage.setItem(`paper:${pathId}`, JSON.stringify(cur));
     } catch {}
-  
+
     router.push(`/paper/?${params.toString()}`);
   }, [cur, router, mode]);
 
-  if (!cur) return <div style={{ padding: 16 }}>?쒖떆???쇰Ц???놁뒿?덈떎.</div>;
+  if (!cur) return <div style={{ padding: 16 }}>표시할 논문이 없습니다.</div>;
 
   const liked = cur.is_liked || isActive(cur.paper_id, "like");
   const bookmarked = cur.is_bookmarked || isActive(cur.paper_id, "bookmark");
@@ -525,16 +522,18 @@ export default function ShortFormSection({
         <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "stretch" }}>
           <button
             onClick={goPrev}
+            disabled={idx <= 0}
             style={{
               height: 46,
               borderRadius: 16,
               border: "1px solid rgba(17, 18, 24, 0.12)",
               background: "rgba(255,255,255,0.92)",
-              cursor: "pointer",
+              cursor: idx <= 0 ? "not-allowed" : "pointer",
               display: "grid",
               placeItems: "center",
               boxShadow: "0 10px 20px rgba(17, 18, 24, 0.12)",
-              color: "#8d90a1"
+              color: idx <= 0 ? "rgba(141, 144, 161, 0.4)" : "#8d90a1",
+              opacity: idx <= 0 ? 0.6 : 1,
             }}
             title="이전 (↑)"
           >

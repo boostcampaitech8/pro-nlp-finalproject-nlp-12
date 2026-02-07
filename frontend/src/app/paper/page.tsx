@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import { useRouter } from "next/navigation";
 import { getPaperSummary, SummaryItem } from "@/lib/api";
 import { getUserId } from "@/lib/user";
 
@@ -8,9 +9,10 @@ export default function PaperDetailPage(props: {
   params: Promise<{ paper_id: string }>;
   searchParams?: Promise<{
     paper_id?: string;
-    arxiv_id?: string
+    arxiv_id?: string;
   }>;
 }) {
+  const router = useRouter();
   const searchParams = props.searchParams ? use(props.searchParams) : {};
 
   const paper_id = searchParams.paper_id;
@@ -27,9 +29,9 @@ export default function PaperDetailPage(props: {
         setLoading(true);
 
         /**
-         * [수정] 
-         * 1. Smart 모드일 때는 쿼리의 arxiv_id를 우선 사용
-         * 2. Fast 모드이거나 일반적인 경우 paper_id를 숫자로 변환하여 사용
+         * Note
+         * 1. Smart 모드: arxiv_id를 우선 사용
+         * 2. Fast 모드/일반 케이스: paper_id를 숫자로 변환해 사용
          */
         const pid = paper_id ? Number(paper_id) : null;
         const aid = arxiv_id || null;
@@ -37,7 +39,7 @@ export default function PaperDetailPage(props: {
         const response = await getPaperSummary(uid, pid, aid);
         setPaperData(response);
       } catch (err) {
-        console.error("요약본 로드 실패:", err);
+        console.error("요약 로드 실패:", err);
       } finally {
         setLoading(false);
       }
@@ -48,31 +50,51 @@ export default function PaperDetailPage(props: {
   // 로딩 중 화면
   if (loading) {
     return (
-      <div style={{
-        position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-        display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
-        background: "#ffffff", zIndex: 1000
-      }}>
-        <div style={{ fontSize: "60px", marginBottom: "20px" }}>🐣</div> 
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          background: "#ffffff",
+          zIndex: 1000,
+        }}
+      >
+        <div style={{ fontSize: "60px", marginBottom: "20px" }}>⏳</div>
         <div style={{ fontSize: "20px", fontWeight: "700", color: "#111218" }}>
-          논문을 열심히 요약하고 있어요!
+          논문을 읽고 요약하고 있어요
         </div>
         <div style={{ marginTop: "10px", fontSize: "14px", color: "#64748b" }}>
-          잠시만 기다려 주세요...
+          잠시만 기다려 주세요..
         </div>
       </div>
     );
   }
 
-  // 준비 된 요약 결과가 없을 때의 화면
+  // 요약 결과가 없을 때 화면
   if (!loading && (!paperData?.summaries || paperData?.summaries.length == 0)) {
     return (
-      <div style={{
-        position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-        display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
-        background: "#ffffff", zIndex: 1000
-      }}>
-        <div style={{ fontSize: "60px", marginBottom: "20px" }}>📭</div> 
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          background: "#ffffff",
+          zIndex: 1000,
+        }}
+      >
+        <div style={{ fontSize: "60px", marginBottom: "20px" }}>😶</div>
         <div style={{ fontSize: "20px", fontWeight: "700", color: "#111218" }}>
           준비된 요약 내용이 없습니다.
         </div>
@@ -80,19 +102,58 @@ export default function PaperDetailPage(props: {
     );
   }
 
-  // 특정 타입의 요약을 찾는 함수
+  // 특정 타입 요약을 찾는 함수
   const getSummary = (type: string) =>
-    paperData?.summaries.find(s => s.summary_type.toLowerCase() === type.toLowerCase())?.summary_text;
+    paperData?.summaries.find((s) => s.summary_type.toLowerCase() === type.toLowerCase())
+      ?.summary_text;
 
   return (
     <div style={{ maxWidth: 980, margin: "0 auto", padding: "24px 16px 120px" }}>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
+        <button
+          type="button"
+          onClick={() => router.back()}
+          style={{
+            padding: "8px 12px",
+            borderRadius: 12,
+            border: "1px solid rgba(17, 18, 24, 0.12)",
+            background: "white",
+            fontWeight: 700,
+            color: "#111218",
+            boxShadow: "0 6px 16px rgba(17, 18, 24, 0.08)",
+            cursor: "pointer",
+          }}
+        >
+          ← 뒤로가기
+        </button>
+      </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
         <div style={{ marginTop: 20, display: "grid", gap: 16 }}>
-          <SummaryBox title="Motivation" text={getSummary("motivation")} color="rgba(255, 107, 0, 0.08)" borderColor="rgba(255, 107, 0, 0.2)" />
-          <SummaryBox title="Methodology" text={getSummary("methodology")} color="rgba(0, 194, 168, 0.08)" borderColor="rgba(0, 194, 168, 0.2)" />
-          <SummaryBox title="Performance" text={getSummary("performance")} color="rgba(17, 18, 24, 0.04)" borderColor="rgba(17, 18, 24, 0.08)" />
-          <SummaryBox title="Significance" text={getSummary("significance")} color="rgba(255, 45, 85, 0.08)" borderColor="rgba(255, 45, 85, 0.2)" />
+          <SummaryBox
+            title="Motivation"
+            text={getSummary("motivation")}
+            color="rgba(255, 107, 0, 0.08)"
+            borderColor="rgba(255, 107, 0, 0.2)"
+          />
+          <SummaryBox
+            title="Methodology"
+            text={getSummary("methodology")}
+            color="rgba(0, 194, 168, 0.08)"
+            borderColor="rgba(0, 194, 168, 0.2)"
+          />
+          <SummaryBox
+            title="Performance"
+            text={getSummary("performance")}
+            color="rgba(17, 18, 24, 0.04)"
+            borderColor="rgba(17, 18, 24, 0.08)"
+          />
+          <SummaryBox
+            title="Significance"
+            text={getSummary("significance")}
+            color="rgba(255, 45, 85, 0.08)"
+            borderColor="rgba(255, 45, 85, 0.2)"
+          />
         </div>
 
         <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -111,7 +172,7 @@ export default function PaperDetailPage(props: {
                 boxShadow: "0 8px 18px rgba(17, 18, 24, 0.08)",
               }}
             >
-              웹 링크
+              Abstract 링크
             </a>
           ) : null}
           {paperData?.pdf_url ? (
@@ -133,7 +194,7 @@ export default function PaperDetailPage(props: {
             </a>
           ) : null}
         </div>
-      </div> 
+      </div>
     </div>
   );
 }
