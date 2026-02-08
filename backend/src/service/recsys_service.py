@@ -33,10 +33,7 @@ class RecSysService:
         self.profile_repo = ProfileRepository(db)
 
         # ✅ 하드코딩 제거: settings로 통일
-        self.faiss = get_faiss_store(
-            dim=int(getattr(settings, "EMBED_DIM", 384)),
-            index_path=getattr(settings, "FAISS_INDEX_PATH", "data/faiss/index.bin"),
-        )
+        self.faiss = get_faiss_store()
 
     def get_weight(self, event_type: str) -> float:
         """

@@ -5,7 +5,10 @@ from src.entity.summary import Summary, SummaryType
 from src.entity.primary_category import PrimaryCategory
 from src.entity.category import Category
 from src.entity.paper_category import PaperCategory
+from src.entity.citation_edge import CitationEdge
 from langchain_core.documents import Document
+
+PAPER_LIMIT = 12800
 
 class PaperRepository:
     def __init__(self, db: Session):
@@ -61,12 +64,110 @@ class PaperRepository:
     def count_all(self) -> int:
         return self.db.query(Paper).count()
     
-    def get_paper_by_arxiv_id(self, arxiv_id: str) -> int:
+    def get_id_by_arxiv_id(self, arxiv_id: str) -> int | None:
         """
         arxiv_id를 기반으로 DB에서 paper_id를 조회합니다.
         """
-        paper = self.db.query(Paper).filter(Paper.arxiv_id==arxiv_id).first()
-        return paper.id
+        paper = self.db.query(Paper).filter(Paper.arxiv_id == arxiv_id).first()
+        return paper.id if paper else None
+
+    def get_paper_obj_by_arxiv_id(self, arxiv_id: str) -> Paper | None:
+        stmt = select(Paper).where(Paper.arxiv_id == arxiv_id)
+        return self.db.execute(stmt).scalars().first()
+
+    def upsert_from_arxiv(self, data: dict) -> Paper:
+        """
+        arXiv API 응답 dict → Paper 생성 또는 기존 반환.
+        카테고리(PrimaryCategory, PaperCategory)도 함께 저장.
+        """
+        existing = self.get_paper_obj_by_arxiv_id(data["arxiv_id"])
+        if existing:
+            return existing
+
+        if self.count_all() >= PAPER_LIMIT:
+            return None
+
+        paper = Paper(
+            arxiv_id=data["arxiv_id"],
+            title=data.get("title", ""),
+            abstract=data.get("abstract", ""),
+            pdf_url=data.get("pdf_url"),
+            published_date=data.get("published_date"),
+            updated_date=data.get("updated_date"),
+        )
+        self.db.add(paper)
+        self.db.flush()  # paper.id 확보
+
+        # 카테고리 저장
+        primary_cat_type = data.get("primary_category")
+        cat_types = data.get("categories") or []
+
+        if primary_cat_type:
+            cat_obj = self._get_or_create_category(primary_cat_type)
+            pc = PrimaryCategory(paper_id=paper.id, category_id=cat_obj.id)
+            self.db.add(pc)
+
+        for ct in cat_types:
+            cat_obj = self._get_or_create_category(ct)
+            exists = self.db.query(PaperCategory).filter_by(
+                paper_id=paper.id, category_id=cat_obj.id
+            ).first()
+            if not exists:
+                self.db.add(PaperCategory(paper_id=paper.id, category_id=cat_obj.id))
+
+        self.db.commit()
+        self.db.refresh(paper)
+        return paper
+
+    def update_s2_metadata(
+        self,
+        paper_id: int,
+        citation_count: int | None,
+        influential_citation_count: int | None,
+        reference_count: int | None,
+    ):
+        """S2에서 가져온 인용 메타데이터를 업데이트합니다."""
+        paper = self.get_by_id(paper_id)
+        if not paper:
+            return
+        paper.citation_count = citation_count
+        paper.influential_citation_count = influential_citation_count
+        paper.reference_count = reference_count
+        self.db.commit()
+
+    def save_citation_edges(self, seed_id: int, references: list[dict]):
+        """
+        S2 references 데이터를 citation_edges에 저장합니다.
+        references: [{"arxiv_id": str|None, "is_influential": bool}, ...]
+        DB에 존재하는 논문만 연결합니다.
+        """
+        for ref in references:
+            ref_arxiv_id = ref.get("arxiv_id")
+            if not ref_arxiv_id:
+                continue
+            cited_paper = self.get_paper_obj_by_arxiv_id(ref_arxiv_id)
+            if not cited_paper:
+                continue
+            # 중복 체크
+            exists = self.db.query(CitationEdge).filter_by(
+                seed_id=seed_id, cited_paper_id=cited_paper.id
+            ).first()
+            if not exists:
+                self.db.add(CitationEdge(
+                    seed_id=seed_id,
+                    cited_paper_id=cited_paper.id,
+                    is_influential=ref.get("is_influential", False),
+                ))
+        self.db.commit()
+
+    def _get_or_create_category(self, category_type: str) -> Category:
+        cat = self.db.query(Category).filter(Category.category_type == category_type).first()
+        if cat:
+            return cat
+        cat = Category(category_type=category_type)
+        self.db.add(cat)
+        self.db.flush()
+        return cat
         
     def get_papers_as_documents(self) -> list[Document]:
         """

@@ -5,16 +5,11 @@ from src.client.embedder import embed_texts
 from src.client.faiss_store import get_faiss_store
 
 
-# TODO: embedder dim으로 맞춰야 함 (ex: MiniLM=384, e5-base=768 등)
-EMBED_DIM = 384
-FAISS_INDEX_PATH = "data/faiss/index.bin"
-
-
 class IngestService:
     def __init__(self, db: Session):
         self.db = db
         self.paper_repo = PaperRepository(db)
-        self.faiss = get_faiss_store(dim=EMBED_DIM, index_path=FAISS_INDEX_PATH)
+        self.faiss = get_faiss_store()
 
     def sync_papers_to_faiss(self, offset: int = 0, limit: int = 1000) -> dict:
         papers = self.paper_repo.fetch_batch(offset=offset, limit=limit)

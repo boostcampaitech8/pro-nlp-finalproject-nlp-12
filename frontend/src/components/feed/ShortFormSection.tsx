@@ -13,13 +13,11 @@ type PendingKey = `${number}:${"like" | "bookmark"}`;
 export default function ShortFormSection({
   items,
   onNeedMore,
-  mode = "fast",
   navBarHeight = 0,
   durationMs = 10_000,
 }: {
   items: FeedItem[];
   onNeedMore?: () => void;
-  mode?: "fast" | "smart";
   navBarHeight?: number;
   durationMs?: number;
 }) {
@@ -225,35 +223,18 @@ export default function ShortFormSection({
 
   const onDetail = useCallback(() => {
     if (!cur) return;
-  
-    const paperId = cur.paper_id;
-    const arxivId = cur.arxiv_id;
 
     const params = new URLSearchParams();
+    const paperId = cur.paper_id;
 
-    let pathId = "";
-
-    if (mode === "smart" && arxivId) {
-      params.set("arxiv_id", arxivId);
-      pathId = arxivId;
-    } else if (paperId !== undefined && paperId !== null) {
-      params.set("paper_id", String(paperId));
-      pathId = String(paperId);
-    } else if (arxivId) {
-      params.set("arxiv_id", arxivId);
-      pathId = arxivId;
-    }
-
-    console.log(params.toString());
-
-    if (!pathId) return;
+    params.set("paper_id", String(paperId));
   
     try {
-      sessionStorage.setItem(`paper:${pathId}`, JSON.stringify(cur));
+      sessionStorage.setItem(`paper:${paperId}`, JSON.stringify(cur));
     } catch {}
 
     router.push(`/paper/?${params.toString()}`);
-  }, [cur, router, mode]);
+  }, [cur, router]);
 
   if (!cur) return <div style={{ padding: 16 }}>표시할 논문이 없습니다.</div>;
 

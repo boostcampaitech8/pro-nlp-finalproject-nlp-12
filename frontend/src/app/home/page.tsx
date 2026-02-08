@@ -228,7 +228,7 @@ export default function HomePage() {
           </div>
         </div>
       )}
-      {!loading && <ShortFormSection items={items} onNeedMore={fetchMore} mode={mode} />}
+      {!loading && <ShortFormSection items={items} onNeedMore={fetchMore} />}
       {mode === "fast" && loadingMore && <div style={{ padding: 12, opacity: 0.6 }}></div>}
       {mode === "smart" && <div style={{ padding: 12, opacity: 0.6 }}></div>}
     </>

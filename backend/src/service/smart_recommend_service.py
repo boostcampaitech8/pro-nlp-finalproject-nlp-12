@@ -4,6 +4,7 @@ Multi-source candidate merge + scoring.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 import logging
@@ -16,13 +17,16 @@ from sqlalchemy.orm import Session
 
 from config import settings
 from src.entity.paper import Paper
-from src.repository.paper_repo import PaperRepository
+from src.repository.paper_repo import PaperRepository, PAPER_LIMIT
 from src.repository.profile_repo import ProfileRepository
 from src.repository.event_repo import EventRepository
 from src.service.recsys.vector_utils import parse_vector_json
 from src.service.recsys.user_vector import maybe_refresh_user_vector
 from src.client.faiss_store import get_faiss_store
+from src.client.arxiv_client import ArxivClient
+from src.client.s2_client import S2Client
 from src.schemas.summary import SummaryType
+from src.repository.summary_repo import SummaryRepository
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +40,9 @@ EVENT_WEIGHTS = {
 }
 
 # 점수 계산 가중치
-ALPHA = 0.4
-BETA = 0.15
-GAMMA = 0.15
-DELTA = 0.3
+ALPHA = 0.45   # 벡터 유사도
+GAMMA = 0.20   # 최신성
+DELTA = 0.35   # 소스 신뢰도
 
 SOURCE_WEIGHTS = {
     "faiss": 1.0,
@@ -79,12 +82,12 @@ class SmartRecommendService:
         self.paper_repo = PaperRepository(db)
         self.profile_repo = ProfileRepository(db)
         self.event_repo = EventRepository(db)
-        self.faiss = get_faiss_store(
-            dim=int(getattr(settings, "EMBED_DIM", 384)),
-            index_path=getattr(settings, "FAISS_INDEX_PATH", "data/faiss/index.bin"),
-        )
+        self.summary_repo = SummaryRepository(db)
+        self.faiss = get_faiss_store()
         self.paper_service = paper_service
         self.valkey = valkey
+        self.arxiv_client = ArxivClient()
+        self.s2_client = S2Client()
 
     def get_profile(self, user_id: str):
         return self.profile_repo.get(user_id)
@@ -114,18 +117,6 @@ class SmartRecommendService:
                 cats = self._safe_json_list(data.get(key))
                 if cats:
                     return cats
-        return []
-
-    def get_keywords(self, user_id: str) -> list[str]:
-        profile = self.get_profile(user_id)
-        if not profile:
-            return []
-        data = getattr(profile, "onboarding_json", None)
-        if isinstance(data, dict):
-            for key in ("extracted_keywords", "keywords", "keyword"):
-                kws = self._safe_json_list(data.get(key))
-                if kws:
-                    return kws
         return []
 
     def get_user_vector(self, user_id: str) -> Optional[np.ndarray]:
@@ -167,7 +158,6 @@ class SmartRecommendService:
         # profile load
         t0 = time.time()
         categories = self.get_categories(user_id)
-        keywords = self.get_keywords(user_id)
         user_vector = self.get_user_vector(user_id)
         timings["profile_load"] = round(time.time() - t0, 3)
 
@@ -196,10 +186,19 @@ class SmartRecommendService:
             if faiss_results:
                 sources_used.append("faiss")
 
-        # [2] arXiv search (placeholder - 현재 미구현)
-        if use_arxiv and (keywords or categories):
+        # [2] arXiv 실시간 검색 (DB 한도 미달 시에만)
+        new_papers: list[dict] = []
+        if use_arxiv and categories and self.paper_repo.count_all() < PAPER_LIMIT:
             t0 = time.time()
+            arxiv_results, new_papers = await self._search_arxiv(
+                categories=categories,
+                exclude_ids=seen_ids,
+                n=50,
+            )
             timings["arxiv_search"] = round(time.time() - t0, 3)
+            candidates.extend(arxiv_results)
+            if arxiv_results:
+                sources_used.append("arxiv")
 
         # [3] category fallback (recent)
         if use_category:
@@ -212,16 +211,14 @@ class SmartRecommendService:
 
         # merge + score
         t0 = time.time()
-        merged = self._merge_and_score(candidates, keywords, seen_ids)
+        merged = self._merge_and_score(candidates, seen_ids)
         timings["merge_score"] = round(time.time() - t0, 3)
 
+        items = []
         for c in merged[:k]:
-            arxiv_id = c.arxiv_id
-            pdf_url = c.pdf_url
+            summary = await self.get_summary(c.arxiv_id, c.pdf_url)
 
-            summary = await self.get_summary(arxiv_id, pdf_url)
-
-            items = [{
+            items.append({
                 "paper_id": c.paper_id,
                 "arxiv_id": c.arxiv_id,
                 "title": c.title,
@@ -232,10 +229,14 @@ class SmartRecommendService:
                 "abs_url": c.abs_url,
                 "pdf_url": c.pdf_url,
                 "is_bookmarked": False,
-                "is_liked": False
-            }]
+                "is_liked": False,
+            })
 
         timings["total"] = round(time.time() - total_start, 3)
+
+        # 새로 추가된 논문의 S2 데이터를 백그라운드로 채움
+        if new_papers:
+            asyncio.create_task(self._enrich_s2_background(new_papers))
 
         return {
             "items": items,
@@ -257,8 +258,11 @@ class SmartRecommendService:
             summaries = paper_data.get("summaries")
         else:
             # 없으면 요약
-            summaries = await self.paper_service.summarize_and_save(arxiv_id, pdf_url, is_store=False)
-            # 새로 생성된 데이터는 valkey에 저장
+            # summaries = await self.paper_service.summarize_and_save(arxiv_id, pdf_url, is_store=True)
+            # 없으면 DB에서 가져오기
+            paper_id = self.paper_repo.get_id_by_arxiv_id(arxiv_id)
+            summaries = self.summary_repo.get_summaries(paper_id)
+            # 가져온 데이터는 valkey에 저장
             if summaries:
                 summaries = {
                     s.summary_type.value: s.summary_text
@@ -392,10 +396,112 @@ class SmartRecommendService:
             logger.error(f"Recent papers search error: {e}")
             return []
 
+    async def _search_arxiv(
+        self,
+        categories: list[str],
+        exclude_ids: set[int],
+        n: int = 50,
+    ) -> tuple[list[Candidate], list[dict]]:
+        """
+        arXiv API 실시간 검색 → DB upsert → Candidate 리스트 반환.
+        반환: (candidates, new_papers) — new_papers는 S2 enrichment 대상
+        """
+        try:
+            raw_papers = await self.arxiv_client.search_combined(
+                categories=categories or None,
+                max_results=n,
+            )
+            if not raw_papers:
+                return [], []
+
+            candidates: list[Candidate] = []
+            new_papers: list[dict] = []  # S2 enrichment 대상
+            for data in raw_papers:
+                # DB에 저장 (이미 있으면 기존 반환, 한도 초과 시 None)
+                already_existed = self.paper_repo.get_paper_obj_by_arxiv_id(data["arxiv_id"])
+                paper = self.paper_repo.upsert_from_arxiv(data)
+                if paper is None:
+                    continue
+
+                # 새로 추가된 논문이면 S2 enrichment 대상
+                if not already_existed:
+                    new_papers.append({"paper_id": paper.id, "arxiv_id": paper.arxiv_id})
+
+                if int(paper.id) in exclude_ids:
+                    continue
+
+                # FAISS에도 추가 (임베딩 생성 + 인덱싱)
+                self._ensure_faiss_indexed(paper)
+
+                meta = self._paper_meta(paper)
+                candidates.append(
+                    Candidate(
+                        paper_id=int(paper.id),
+                        arxiv_id=meta["arxiv_id"],
+                        title=getattr(paper, "title", None) or "",
+                        abstract=getattr(paper, "abstract", None) or "",
+                        authors=None,
+                        primary_category=meta["primary_category"],
+                        categories=meta["categories"],
+                        published_at=meta["published_at"],
+                        abs_url=meta["abs_url"],
+                        pdf_url=getattr(paper, "pdf_url", None),
+                        source="arxiv",
+                        raw_score=0.6,
+                    )
+                )
+
+            logger.info(f"arXiv search returned {len(candidates)} candidates, {len(new_papers)} new")
+            return candidates, new_papers
+        except Exception as e:
+            logger.error(f"arXiv search error: {e}")
+            return [], []
+
+    async def _enrich_s2_background(self, new_papers: list[dict]):
+        """
+        백그라운드에서 새로 추가된 논문의 S2 메타데이터 + citation_edges를 채웁니다.
+        recommend() 응답 이후 비동기로 실행됩니다.
+        """
+        for paper_info in new_papers:
+            paper_id = paper_info["paper_id"]
+            arxiv_id = paper_info["arxiv_id"]
+            try:
+                # 1) 인용 메타데이터 (citation_count, influential_citation_count, reference_count)
+                metadata = await self.s2_client.get_paper_metadata(arxiv_id)
+                if metadata:
+                    self.paper_repo.update_s2_metadata(
+                        paper_id=paper_id,
+                        citation_count=metadata["citation_count"],
+                        influential_citation_count=metadata["influential_citation_count"],
+                        reference_count=metadata["reference_count"],
+                    )
+
+                # 2) 참조 논문 → citation_edges (DB에 있는 논문만 연결)
+                references = await self.s2_client.get_references(arxiv_id)
+                if references:
+                    self.paper_repo.save_citation_edges(paper_id, references)
+
+                logger.info(f"S2 enrichment done for paper {paper_id} ({arxiv_id})")
+            except Exception as e:
+                logger.warning(f"S2 enrichment failed for paper {paper_id}: {e}")
+
+    def _ensure_faiss_indexed(self, paper: Paper):
+        """논문이 FAISS 인덱스에 없으면 임베딩 생성 후 추가"""
+        try:
+            existing = self.faiss.get_existing_ids()
+            if int(paper.id) in existing:
+                return
+            text = f"Title: {paper.title}\n\nAbstract: {paper.abstract}"
+            vec = self.faiss.embeddings.embed_documents([text])
+            vec_np = np.array(vec, dtype="float32")
+            self.faiss.add_with_ids([int(paper.id)], vec_np)
+            self.faiss.persist()
+        except Exception as e:
+            logger.warning(f"FAISS indexing skipped for paper {paper.id}: {e}")
+
     def _merge_and_score(
         self,
         candidates: list[Candidate],
-        keywords: list[str],
         seen_ids: set[int],
     ) -> list[Candidate]:
         # arxiv_id 기준 중복 제거
@@ -411,12 +517,10 @@ class SmartRecommendService:
 
         for item in unique:
             recency = self._calc_recency(item.published_at)
-            kw_score = self._calc_keyword_score(item, keywords)
             source_w = SOURCE_WEIGHTS.get(item.source, 0.5)
 
             item.final_score = (
                 ALPHA * item.raw_score
-                + BETA * kw_score
                 + GAMMA * recency
                 + DELTA * source_w
             )
@@ -437,9 +541,3 @@ class SmartRecommendService:
         except Exception:
             return 0.5
 
-    def _calc_keyword_score(self, item: Candidate, keywords: list[str]) -> float:
-        if not keywords:
-            return 0.5
-        text = (item.title + " " + (item.abstract or "")).lower()
-        matches = sum(1 for kw in keywords if kw.lower() in text)
-        return min(1.0, matches / max(len(keywords), 1))
