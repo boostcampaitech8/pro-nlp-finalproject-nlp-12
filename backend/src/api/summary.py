@@ -2,7 +2,6 @@ from src.schemas.summary import SummaryRequest, SummaryResponse
 from fastapi import APIRouter, Depends
 from src.service.paper_service import PaperService
 from src.api.dependencies import get_paper_service
-import time
 
 router = APIRouter(
     prefix="/summary",
@@ -17,7 +16,4 @@ async def read_summaries(
     """
     클릭 이벤트를 저장하고 논문 요약본을 반환합니다.
     """
-    start = time.time()
-    result = await service.get_summaries_and_log_click(request.user_id, request.paper_id, request.arxiv_id)
-    print(f"📑 API Router Layer: {time.time() - start:.4f}s")
-    return result
+    return await service.get_summaries_and_log_click(request.user_id, request.paper_id, request.arxiv_id)

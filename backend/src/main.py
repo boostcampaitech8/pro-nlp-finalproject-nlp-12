@@ -6,7 +6,7 @@ from src.client.faiss_store import get_faiss_store
 from src.repository.paper_repo import PaperRepository
 from src.service.search.search_service import SearchService
 from src.entity.base import init_db
-import uvicorn
+# import uvicorn
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -50,7 +50,8 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000"
+        "http://localhost:3000",
+        "https://10seconds.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -71,5 +72,5 @@ app.include_router(users.router, prefix=API_PREFIX)
 def read_root():
     return {"message": "논문 숏폼 서비스입니다."}
 
-if __name__ == "__main__":
-    uvicorn.run("src.main:app", host="127.0.0.1", port=8000, reload=True)
+# if __name__ == "__main__":
+#     uvicorn.run("src.main:app", host="127.0.0.1", port=8000, reload=True)

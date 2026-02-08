@@ -1,22 +1,16 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getPaperSummary, SummaryItem } from "@/lib/api";
 import { getUserId } from "@/lib/user";
 
-export default function PaperDetailPage(props: {
-  params: Promise<{ paper_id: string }>;
-  searchParams?: Promise<{
-    paper_id?: string;
-    arxiv_id?: string;
-  }>;
-}) {
+export default function PaperDetailPage() {
   const router = useRouter();
-  const searchParams = props.searchParams ? use(props.searchParams) : {};
+  const searchParams = useSearchParams();
 
-  const paper_id = searchParams.paper_id;
-  const arxiv_id = searchParams.arxiv_id;
+  const paper_id = searchParams.get("paper_id");
+  const arxiv_id = searchParams.get("arxiv_id");
 
   const [paperData, setPaperData] = useState<SummaryItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,6 +19,7 @@ export default function PaperDetailPage(props: {
     async function loadSummary() {
       const uid = getUserId();
       if (!uid) return;
+      
       try {
         setLoading(true);
 
@@ -33,8 +28,14 @@ export default function PaperDetailPage(props: {
          * 1. Smart 모드: arxiv_id를 우선 사용
          * 2. Fast 모드/일반 케이스: paper_id를 숫자로 변환해 사용
          */
-        const pid = paper_id ? Number(paper_id) : null;
-        const aid = arxiv_id || null;
+
+        console.log(paper_id);
+        console.log(arxiv_id);
+
+        const pid = (paper_id && paper_id !== "undefined") ? Number(paper_id) : null;
+        const aid = (arxiv_id && arxiv_id !== "undefined") ? arxiv_id : null;
+
+        console.log("Calling getPaperSummary with:", { uid, pid, aid });
 
         const response = await getPaperSummary(uid, pid, aid);
         setPaperData(response);
