@@ -127,6 +127,8 @@ class PaperService:
         # 캐싱 데이터 확인
         cache_key = f"summary:{arxiv_id}"
         cached_data = await self.valkey.get(cache_key)
+        pdf_url = None
+        summaries = None
 
         if cached_data:
             paper_data = json.loads(cached_data)

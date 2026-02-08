@@ -1,4 +1,4 @@
-﻿"use client";
+﻿﻿"use client";
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -226,31 +226,14 @@ export default function ShortFormSection({
   const onDetail = useCallback(() => {
     if (!cur) return;
   
-    console.log("onDetail cur =", cur);
-    console.log("onDetail cur.paper_id =", cur.paper_id);
-    console.log("onDetail cur.arxiv_id =", cur.arxiv_id);
-  
     const paperId = cur.paper_id;
-    const arxivId = cur.arxiv_id;
+
     const params = new URLSearchParams();
 
-    if (mode === "smart" && arxivId) {
-      // Smart 모드
-      params.set("arxiv_id", arxivId);
-    } else if (paperId !== undefined && paperId !== null) {
-      // Fast 모드 또는 search, mypage
-      params.set("paper_id", String(paperId));
-    }
-
-    const pathId = paperId || arxivId;
-  
-    if (!pathId) {
-      console.error("No identifier (paper_id or arxiv_id) found. cur =", cur);
-      return;
-    }
+    params.set("paper_id", String(paperId));
   
     try {
-      sessionStorage.setItem(`paper:${pathId}`, JSON.stringify(cur));
+      sessionStorage.setItem(`paper:${paperId}`, JSON.stringify(cur));
     } catch {}
 
     router.push(`/paper/?${params.toString()}`);
