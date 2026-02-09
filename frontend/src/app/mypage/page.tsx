@@ -159,12 +159,12 @@ export default function MyPage() {
                 }}
               >
                 <div style={{ fontWeight: 800, color: "#111218" }}>
-                  <Link href={`/paper/${it.paper_id}?from=mypage`}>{it.title}</Link>
+                  <Link href={`/paper/?paper_id=${it.paper_id}&from=mypage`}>{it.title}</Link>
                 </div>
                 <div style={{ opacity: 0.78, marginTop: 6, fontSize: 13, color: "#2c2f3a" }}>{it.abstract}</div>
                 <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <Link
-                    href={`/paper/${it.paper_id}?from=mypage`}
+                    href={`/paper/?paper_id=${it.paper_id}&from=mypage`}
                     style={{
                       display: "inline-flex",
                       padding: "8px 12px",
