@@ -11,12 +11,12 @@ class Settings(BaseSettings):
     mysql_db: str
     valkey_uri: str
     clovastudio_api_key: str
-    
+
     # Embedding
-    EMBED_MODEL: str = "OrdalieTech/Solon-embeddings-large-0.1" # sentence-transformers/all-MiniLM-L6-v2
+    EMBED_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
 
     # FAISS
-    EMBED_DIM: int = 1024  # 384
+    EMBED_DIM: int = 384
     FAISS_INDEX_PATH: str = "data/faiss/index.bin"
 
     class Config:

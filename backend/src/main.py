@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
         all_papers = paper_repository.get_papers_as_documents()
 
         # Faiss 인스턴스 생성 및 신규 논문 업데이트
-        faiss_store = get_faiss_store()
+        faiss_store = get_faiss_store(dim=1024, index_path="./data/faiss/solon-index.bin", model_name="OrdalieTech/Solon-embeddings-large-0.1")
         faiss_store.update_papers(all_papers)
 
         app.state.search_service = SearchService(faiss_store, all_papers)
