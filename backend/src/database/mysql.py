@@ -1,8 +1,7 @@
 from dotenv import load_dotenv
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-from contextlib import contextmanager
+from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
 
@@ -25,7 +24,6 @@ engine = create_engine(
 # 세션 설정
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-@contextmanager
 def get_mysql_db():
     """
     MySQL 연결을 생성하고 사용 후 안전하게 닫습니다.
